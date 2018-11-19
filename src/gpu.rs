@@ -7,8 +7,6 @@ use ocl::Platform;
 use ocl::ProQue;
 use ocl::Result;
 
-use ocl_core::Ulong;
-
 use derivation::GenerateKeyType;
 
 pub struct Gpu {

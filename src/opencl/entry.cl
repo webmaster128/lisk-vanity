@@ -17,7 +17,15 @@ inline uint64_t pubkey_to_address(const uchar pubkey[32]) {
 	return out;
 }
 
-__kernel void generate_pubkey (__global uchar *result, __global uchar *key_root, __global uchar *pub_req, __global uchar *pub_mask, uchar prefix_len, uchar generate_key_type, __global uchar *public_offset) {
+__kernel void generate_pubkey(
+	__global uchar *result,
+	__global uchar *key_root,
+	__global uchar *pub_req,
+	__global uchar *pub_mask,
+	uchar prefix_len,
+	uchar generate_key_type,
+	__global uchar *public_offset
+) {
 	int const thread = get_global_id (0);
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
