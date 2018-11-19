@@ -20,7 +20,7 @@ inline uint64_t pubkey_to_address(const uchar pubkey[32]) {
 __kernel void generate_pubkey(
 	__global uchar *result,
 	__global uchar *key_root,
-	uchar prefix_len,
+	ulong max_address_value,
 	uchar generate_key_type,
 	__global uchar *public_offset
 ) {
@@ -72,7 +72,7 @@ __kernel void generate_pubkey(
 
 	uint64_t address = pubkey_to_address(pubkey);
 
-	if (address <= 999999999999999ul) {
+	if (address <= max_address_value) {
 		for (uchar i = 0; i < 32; i++) {
 			result[i] = key_material[i];
 		}

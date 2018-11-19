@@ -79,7 +79,7 @@ impl Gpu {
             .global_work_size(threads)
             .arg(&result)
             .arg(&key_root)
-            .arg(4 as u8)
+            .arg(max_address_value)
             .arg(gen_key_type_code)
             .arg(&public_offset)
             .build()?;
