@@ -24,12 +24,12 @@ __kernel void generate_pubkey(
 	uchar generate_key_type,
 	__global uchar *public_offset
 ) {
-	int const thread = get_global_id (0);
+	size_t const thread_id = get_global_id(0);
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
 		key_material[i] = key_root[i];
 	}
-	*((size_t *) key_material) += thread;
+	*((size_t *) key_material) += thread_id;
 	uchar *key;
 	if (generate_key_type == 1) {
 		// seed
