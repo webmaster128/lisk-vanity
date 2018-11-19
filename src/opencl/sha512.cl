@@ -883,10 +883,10 @@ inline int memmem_pc(const void *haystack, size_t haystack_len,
 #define _OPENCL_SHA2_H
 
 
-#define SHA256_LUT3 HAVE_LUT3
-#define SHA512_LUT3 HAVE_LUT3_64
+#define SHA2_H_SHA256_LUT3 HAVE_LUT3
+#define SHA2_H_SHA512_LUT3 HAVE_LUT3_64
 
-#if SHA256_LUT3
+#if SHA2_H_SHA256_LUT3
 #define Ch(x, y, z) lut3(x, y, z, 0xca)
 #elif USE_BITSELECT
 #define Ch(x, y, z) bitselect(z, y, x)
@@ -896,7 +896,7 @@ inline int memmem_pc(const void *haystack, size_t haystack_len,
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #endif
 
-#if SHA256_LUT3
+#if SHA2_H_SHA256_LUT3
 #define Maj(x, y, z) lut3(x, y, z, 0xe8)
 #elif USE_BITSELECT
 #define Maj(x, y, z) bitselect(x, y, z ^ x)
@@ -911,7 +911,7 @@ __const_a8 uint h[] = {
 	0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 
-__const_a8 uint k[] = {
+__const_a8 uint SHA2_H_k[] = {
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
 	0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
 	0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -925,10 +925,10 @@ __const_a8 uint k[] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-#if 0 && SHA256_LUT3
+#if 0 && SHA2_H_SHA256_LUT3
 /* LOP3.LUT alternative - does no good */
-#define Sigma0(x) lut3(ror(x, 2), ror(x, 13), ror(x, 22), 0x96)
-#define Sigma1(x) lut3(ror(x, 6), ror(x, 11), ror(x, 25), 0x96)
+#define SHA2_H_Sigma0(x) lut3(ror(x, 2), ror(x, 13), ror(x, 22), 0x96)
+#define SHA2_H_Sigma1(x) lut3(ror(x, 6), ror(x, 11), ror(x, 25), 0x96)
 #elif gpu_nvidia(DEVICE_INFO)
 /*
  * These Sigma alternatives are from "Fast SHA-256 Implementations on Intel
@@ -936,18 +936,18 @@ __const_a8 uint k[] = {
  * with destructive rotate (minimizing register copies) but might be better
  * or worse on different hardware for other reasons.
  */
-#define Sigma0(x) (ror(ror(ror(x, 9) ^ x, 11) ^ x, 2))
-#define Sigma1(x) (ror(ror(ror(x, 14) ^ x, 5) ^ x, 6))
+#define SHA2_H_Sigma0(x) (ror(ror(ror(x, 9) ^ x, 11) ^ x, 2))
+#define SHA2_H_Sigma1(x) (ror(ror(ror(x, 14) ^ x, 5) ^ x, 6))
 #else
 /* Original SHA-2 function */
-#define Sigma0(x) (ror(x, 2) ^ ror(x, 13) ^ ror(x, 22))
-#define Sigma1(x) (ror(x, 6) ^ ror(x, 11) ^ ror(x, 25))
+#define SHA2_H_Sigma0(x) (ror(x, 2) ^ ror(x, 13) ^ ror(x, 22))
+#define SHA2_H_Sigma1(x) (ror(x, 6) ^ ror(x, 11) ^ ror(x, 25))
 #endif
 
-#if 0 && SHA256_LUT3
+#if 0 && SHA2_H_SHA256_LUT3
 /* LOP3.LUT alternative - does no good */
-#define sigma0(x) lut3(ror(x, 7), ror(x, 18), (x >> 3), 0x96)
-#define sigma1(x) lut3(ror(x, 17), ror(x, 19), (x >> 10), 0x96)
+#define SHA2_H_sigma0(x) lut3(ror(x, 7), ror(x, 18), (x >> 3), 0x96)
+#define SHA2_H_sigma1(x) lut3(ror(x, 17), ror(x, 19), (x >> 10), 0x96)
 #elif 0
 /*
  * These sigma alternatives are derived from "Fast SHA-512 Implementations
@@ -957,206 +957,206 @@ __const_a8 uint k[] = {
  * hardware for other reasons. They will likely always be a regression when
  * we have hardware rotate instructions.
  */
-#define sigma0(x) ((((((x >> 11) ^ x) >> 4) ^ x) >> 3) ^ (((x << 11) ^ x) << 14))
-#define sigma1(x) ((((((x >> 2) ^ x) >> 7) ^ x) >> 10) ^ (((x << 2) ^ x) << 13))
+#define SHA2_H_sigma0(x) ((((((x >> 11) ^ x) >> 4) ^ x) >> 3) ^ (((x << 11) ^ x) << 14))
+#define SHA2_H_sigma1(x) ((((((x >> 2) ^ x) >> 7) ^ x) >> 10) ^ (((x << 2) ^ x) << 13))
 #else
 /* Original SHA-2 function */
-#define sigma0(x) (ror(x, 7) ^ ror(x, 18) ^ (x >> 3))
-#define sigma1(x) (ror(x, 17) ^ ror(x, 19) ^ (x >> 10))
+#define SHA2_H_sigma0(x) (ror(x, 7) ^ ror(x, 18) ^ (x >> 3))
+#define SHA2_H_sigma1(x) (ror(x, 17) ^ ror(x, 19) ^ (x >> 10))
 #endif
 
-#define ROUND_A(a,b,c,d,e,f,g,h,ki,wi)	  \
+#define SHA2_H_ROUND_A(a,b,c,d,e,f,g,h,ki,wi)	  \
 	{ \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
-#define ROUND_Z(a,b,c,d,e,f,g,h,ki)	  \
+#define SHA2_H_ROUND_Z(a,b,c,d,e,f,g,h,ki)	  \
 	{ \
-		t = (ki) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		t = (ki) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
-#define ROUND_B(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_B(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma1(wj) + sigma0(wk) + wl + wm; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma1(wj) + SHA2_H_sigma0(wk) + wl + wm; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
 //0110
-#define ROUND_I(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_I(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma0(wk) + wl; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma0(wk) + wl; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
 //1110
-#define ROUND_J(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_J(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma1(wj) + sigma0(wk) + wl; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma1(wj) + SHA2_H_sigma0(wk) + wl; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
 //1011
-#define ROUND_K(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_K(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma1(wj) + wl + wm; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma1(wj) + wl + wm; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
 //1001
-#define ROUND_L(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_L(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma1(wj)+ wm; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma1(wj)+ wm; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
 //1101
-#define ROUND_M(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
+#define SHA2_H_ROUND_M(a,b,c,d,e,f,g,h,ki,wi,wj,wk,wl,wm)	  \
 	{ \
-		wi = sigma1(wj) + sigma0(wk) + wm; \
-		t = (ki) + (wi) + (h) + Sigma1(e) + Ch((e),(f),(g)); \
-		d += (t); h = (t) + Sigma0(a) + Maj((a), (b), (c)); \
+		wi = SHA2_H_sigma1(wj) + SHA2_H_sigma0(wk) + wm; \
+		t = (ki) + (wi) + (h) + SHA2_H_Sigma1(e) + Ch((e),(f),(g)); \
+		d += (t); h = (t) + SHA2_H_Sigma0(a) + Maj((a), (b), (c)); \
 	}
 
-#define SHA256(A,B,C,D,E,F,G,H,W)	  \
-	ROUND_A(A,B,C,D,E,F,G,H,k[0],W[0]); \
-	ROUND_A(H,A,B,C,D,E,F,G,k[1],W[1]); \
-	ROUND_A(G,H,A,B,C,D,E,F,k[2],W[2]); \
-	ROUND_A(F,G,H,A,B,C,D,E,k[3],W[3]); \
-	ROUND_A(E,F,G,H,A,B,C,D,k[4],W[4]); \
-	ROUND_A(D,E,F,G,H,A,B,C,k[5],W[5]); \
-	ROUND_A(C,D,E,F,G,H,A,B,k[6],W[6]); \
-	ROUND_A(B,C,D,E,F,G,H,A,k[7],W[7]); \
-	ROUND_A(A,B,C,D,E,F,G,H,k[8],W[8]); \
-	ROUND_A(H,A,B,C,D,E,F,G,k[9],W[9]); \
-	ROUND_A(G,H,A,B,C,D,E,F,k[10],W[10]); \
-	ROUND_A(F,G,H,A,B,C,D,E,k[11],W[11]); \
-	ROUND_A(E,F,G,H,A,B,C,D,k[12],W[12]); \
-	ROUND_A(D,E,F,G,H,A,B,C,k[13],W[13]); \
-	ROUND_A(C,D,E,F,G,H,A,B,k[14],W[14]); \
-	ROUND_A(B,C,D,E,F,G,H,A,k[15],W[15]); \
-	ROUND_B(A,B,C,D,E,F,G,H,k[16],W[0],  W[14],W[1],W[0],W[9]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[17],W[1],  W[15],W[2],W[1],W[10]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[18],W[2],  W[0],W[3],W[2],W[11]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[19],W[3],  W[1],W[4],W[3],W[12]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[20],W[4],  W[2],W[5],W[4],W[13]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[21],W[5],  W[3],W[6],W[5],W[14]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[22],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[23],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[24],W[8],  W[6],W[9],W[8],W[1]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[25],W[9],  W[7],W[10],W[9],W[2]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[26],W[10],  W[8],W[11],W[10],W[3]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[27],W[11],  W[9],W[12],W[11],W[4]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[28],W[12],  W[10],W[13],W[12],W[5]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[29],W[13],  W[11],W[14],W[13],W[6]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[30],W[14],  W[12],W[15],W[14],W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[31],W[15],  W[13],W[0],W[15],W[8]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[32],W[0],  W[14],W[1],W[0],W[9]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[33],W[1],  W[15],W[2],W[1],W[10]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[34],W[2],  W[0],W[3],W[2],W[11]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[35],W[3],  W[1],W[4],W[3],W[12]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[36],W[4],  W[2],W[5],W[4],W[13]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[37],W[5],  W[3],W[6],W[5],W[14]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[38],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[39],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[40],W[8],  W[6],W[9],W[8],W[1]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[41],W[9],  W[7],W[10],W[9],W[2]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[42],W[10],  W[8],W[11],W[10],W[3]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[43],W[11],  W[9],W[12],W[11],W[4]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[44],W[12],  W[10],W[13],W[12],W[5]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[45],W[13],  W[11],W[14],W[13],W[6]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[46],W[14],  W[12],W[15],W[14],W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[47],W[15],  W[13],W[0],W[15],W[8]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[48],W[0],  W[14],W[1],W[0],W[9]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[49],W[1],  W[15],W[2],W[1],W[10]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[50],W[2],  W[0],W[3],W[2],W[11]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[51],W[3],  W[1],W[4],W[3],W[12]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[52],W[4],  W[2],W[5],W[4],W[13]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[53],W[5],  W[3],W[6],W[5],W[14]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[54],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[55],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[56],W[8],  W[6],W[9],W[8],W[1]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[57],W[9],  W[7],W[10],W[9],W[2]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[58],W[10],  W[8],W[11],W[10],W[3]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[59],W[11],  W[9],W[12],W[11],W[4]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[60],W[12],  W[10],W[13],W[12],W[5]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[61],W[13],  W[11],W[14],W[13],W[6]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[62],W[14],  W[12],W[15],W[14],W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[63],W[15],  W[13],W[0],W[15],W[8])
+#define SHA2_H_SHA256(A,B,C,D,E,F,G,H,W)	  \
+	SHA2_H_ROUND_A(A,B,C,D,E,F,G,H,SHA2_H_k[0],W[0]); \
+	SHA2_H_ROUND_A(H,A,B,C,D,E,F,G,SHA2_H_k[1],W[1]); \
+	SHA2_H_ROUND_A(G,H,A,B,C,D,E,F,SHA2_H_k[2],W[2]); \
+	SHA2_H_ROUND_A(F,G,H,A,B,C,D,E,SHA2_H_k[3],W[3]); \
+	SHA2_H_ROUND_A(E,F,G,H,A,B,C,D,SHA2_H_k[4],W[4]); \
+	SHA2_H_ROUND_A(D,E,F,G,H,A,B,C,SHA2_H_k[5],W[5]); \
+	SHA2_H_ROUND_A(C,D,E,F,G,H,A,B,SHA2_H_k[6],W[6]); \
+	SHA2_H_ROUND_A(B,C,D,E,F,G,H,A,SHA2_H_k[7],W[7]); \
+	SHA2_H_ROUND_A(A,B,C,D,E,F,G,H,SHA2_H_k[8],W[8]); \
+	SHA2_H_ROUND_A(H,A,B,C,D,E,F,G,SHA2_H_k[9],W[9]); \
+	SHA2_H_ROUND_A(G,H,A,B,C,D,E,F,SHA2_H_k[10],W[10]); \
+	SHA2_H_ROUND_A(F,G,H,A,B,C,D,E,SHA2_H_k[11],W[11]); \
+	SHA2_H_ROUND_A(E,F,G,H,A,B,C,D,SHA2_H_k[12],W[12]); \
+	SHA2_H_ROUND_A(D,E,F,G,H,A,B,C,SHA2_H_k[13],W[13]); \
+	SHA2_H_ROUND_A(C,D,E,F,G,H,A,B,SHA2_H_k[14],W[14]); \
+	SHA2_H_ROUND_A(B,C,D,E,F,G,H,A,SHA2_H_k[15],W[15]); \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[16],W[0],  W[14],W[1],W[0],W[9]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[17],W[1],  W[15],W[2],W[1],W[10]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[18],W[2],  W[0],W[3],W[2],W[11]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[19],W[3],  W[1],W[4],W[3],W[12]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[20],W[4],  W[2],W[5],W[4],W[13]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[21],W[5],  W[3],W[6],W[5],W[14]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[22],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[23],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[24],W[8],  W[6],W[9],W[8],W[1]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[25],W[9],  W[7],W[10],W[9],W[2]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[26],W[10],  W[8],W[11],W[10],W[3]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[27],W[11],  W[9],W[12],W[11],W[4]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[28],W[12],  W[10],W[13],W[12],W[5]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[29],W[13],  W[11],W[14],W[13],W[6]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[30],W[14],  W[12],W[15],W[14],W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[31],W[15],  W[13],W[0],W[15],W[8]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[32],W[0],  W[14],W[1],W[0],W[9]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[33],W[1],  W[15],W[2],W[1],W[10]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[34],W[2],  W[0],W[3],W[2],W[11]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[35],W[3],  W[1],W[4],W[3],W[12]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[36],W[4],  W[2],W[5],W[4],W[13]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[37],W[5],  W[3],W[6],W[5],W[14]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[38],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[39],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[40],W[8],  W[6],W[9],W[8],W[1]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[41],W[9],  W[7],W[10],W[9],W[2]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[42],W[10],  W[8],W[11],W[10],W[3]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[43],W[11],  W[9],W[12],W[11],W[4]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[44],W[12],  W[10],W[13],W[12],W[5]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[45],W[13],  W[11],W[14],W[13],W[6]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[46],W[14],  W[12],W[15],W[14],W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[47],W[15],  W[13],W[0],W[15],W[8]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[48],W[0],  W[14],W[1],W[0],W[9]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[49],W[1],  W[15],W[2],W[1],W[10]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[50],W[2],  W[0],W[3],W[2],W[11]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[51],W[3],  W[1],W[4],W[3],W[12]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[52],W[4],  W[2],W[5],W[4],W[13]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[53],W[5],  W[3],W[6],W[5],W[14]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[54],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[55],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[56],W[8],  W[6],W[9],W[8],W[1]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[57],W[9],  W[7],W[10],W[9],W[2]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[58],W[10],  W[8],W[11],W[10],W[3]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[59],W[11],  W[9],W[12],W[11],W[4]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[60],W[12],  W[10],W[13],W[12],W[5]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[61],W[13],  W[11],W[14],W[13],W[6]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[62],W[14],  W[12],W[15],W[14],W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[63],W[15],  W[13],W[0],W[15],W[8])
 
 #define Z (0)
 //W[9]-W[14] are zeros
-#define SHA256_ZEROS(A,B,C,D,E,F,G,H,W)	  \
-	ROUND_A(A,B,C,D,E,F,G,H,k[0],W[0]); \
-	ROUND_A(H,A,B,C,D,E,F,G,k[1],W[1]); \
-	ROUND_A(G,H,A,B,C,D,E,F,k[2],W[2]); \
-	ROUND_A(F,G,H,A,B,C,D,E,k[3],W[3]); \
-	ROUND_A(E,F,G,H,A,B,C,D,k[4],W[4]); \
-	ROUND_A(D,E,F,G,H,A,B,C,k[5],W[5]); \
-	ROUND_A(C,D,E,F,G,H,A,B,k[6],W[6]); \
-	ROUND_A(B,C,D,E,F,G,H,A,k[7],W[7]); \
-	ROUND_A(A,B,C,D,E,F,G,H,k[8],W[8]); \
-	ROUND_Z(H,A,B,C,D,E,F,G,k[9]); \
-	ROUND_Z(G,H,A,B,C,D,E,F,k[10]); \
-	ROUND_Z(F,G,H,A,B,C,D,E,k[11]); \
-	ROUND_Z(E,F,G,H,A,B,C,D,k[12]); \
-	ROUND_Z(D,E,F,G,H,A,B,C,k[13]); \
-	ROUND_Z(C,D,E,F,G,H,A,B,k[14]); \
-	ROUND_A(B,C,D,E,F,G,H,A,k[15],W[15]); \
-	ROUND_I(A,B,C,D,E,F,G,H,k[16],W[0],  Z,W[1],W[0],Z) \
-	ROUND_J(H,A,B,C,D,E,F,G,k[17],W[1],  W[15],W[2],W[1],Z) \
-	ROUND_J(G,H,A,B,C,D,E,F,k[18],W[2],  W[0],W[3],W[2],Z) \
-	ROUND_J(F,G,H,A,B,C,D,E,k[19],W[3],  W[1],W[4],W[3],Z) \
-	ROUND_J(E,F,G,H,A,B,C,D,k[20],W[4],  W[2],W[5],W[4],Z) \
-	ROUND_J(D,E,F,G,H,A,B,C,k[21],W[5],  W[3],W[6],W[5],Z) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[22],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[23],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_K(A,B,C,D,E,F,G,H,k[24],W[8],  W[6],Z,W[8],W[1]) \
-	ROUND_L(H,A,B,C,D,E,F,G,k[25],W[9],  W[7],Z,Z,W[2]) \
-	ROUND_L(G,H,A,B,C,D,E,F,k[26],W[10],  W[8],Z,Z,W[3]) \
-	ROUND_L(F,G,H,A,B,C,D,E,k[27],W[11],  W[9],Z,Z,W[4]) \
-	ROUND_L(E,F,G,H,A,B,C,D,k[28],W[12],  W[10],Z,Z,W[5]) \
-	ROUND_L(D,E,F,G,H,A,B,C,k[29],W[13],  W[11],Z,Z,W[6]) \
-	ROUND_M(C,D,E,F,G,H,A,B,k[30],W[14],  W[12],W[15],Z,W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[31],W[15],  W[13],W[0],W[15],W[8]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[32],W[0],  W[14],W[1],W[0],W[9]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[33],W[1],  W[15],W[2],W[1],W[10]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[34],W[2],  W[0],W[3],W[2],W[11]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[35],W[3],  W[1],W[4],W[3],W[12]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[36],W[4],  W[2],W[5],W[4],W[13]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[37],W[5],  W[3],W[6],W[5],W[14]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[38],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[39],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[40],W[8],  W[6],W[9],W[8],W[1]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[41],W[9],  W[7],W[10],W[9],W[2]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[42],W[10],  W[8],W[11],W[10],W[3]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[43],W[11],  W[9],W[12],W[11],W[4]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[44],W[12],  W[10],W[13],W[12],W[5]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[45],W[13],  W[11],W[14],W[13],W[6]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[46],W[14],  W[12],W[15],W[14],W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[47],W[15],  W[13],W[0],W[15],W[8]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[48],W[0],  W[14],W[1],W[0],W[9]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[49],W[1],  W[15],W[2],W[1],W[10]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[50],W[2],  W[0],W[3],W[2],W[11]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[51],W[3],  W[1],W[4],W[3],W[12]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[52],W[4],  W[2],W[5],W[4],W[13]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[53],W[5],  W[3],W[6],W[5],W[14]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[54],W[6],  W[4],W[7],W[6],W[15]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[55],W[7],  W[5],W[8],W[7],W[0]) \
-	ROUND_B(A,B,C,D,E,F,G,H,k[56],W[8],  W[6],W[9],W[8],W[1]) \
-	ROUND_B(H,A,B,C,D,E,F,G,k[57],W[9],  W[7],W[10],W[9],W[2]) \
-	ROUND_B(G,H,A,B,C,D,E,F,k[58],W[10],  W[8],W[11],W[10],W[3]) \
-	ROUND_B(F,G,H,A,B,C,D,E,k[59],W[11],  W[9],W[12],W[11],W[4]) \
-	ROUND_B(E,F,G,H,A,B,C,D,k[60],W[12],  W[10],W[13],W[12],W[5]) \
-	ROUND_B(D,E,F,G,H,A,B,C,k[61],W[13],  W[11],W[14],W[13],W[6]) \
-	ROUND_B(C,D,E,F,G,H,A,B,k[62],W[14],  W[12],W[15],W[14],W[7]) \
-	ROUND_B(B,C,D,E,F,G,H,A,k[63],W[15],  W[13],W[0],W[15],W[8])
+#define SHA2_H_SHA256_ZEROS(A,B,C,D,E,F,G,H,W)	  \
+	SHA2_H_ROUND_A(A,B,C,D,E,F,G,H,SHA2_H_k[0],W[0]); \
+	SHA2_H_ROUND_A(H,A,B,C,D,E,F,G,SHA2_H_k[1],W[1]); \
+	SHA2_H_ROUND_A(G,H,A,B,C,D,E,F,SHA2_H_k[2],W[2]); \
+	SHA2_H_ROUND_A(F,G,H,A,B,C,D,E,SHA2_H_k[3],W[3]); \
+	SHA2_H_ROUND_A(E,F,G,H,A,B,C,D,SHA2_H_k[4],W[4]); \
+	SHA2_H_ROUND_A(D,E,F,G,H,A,B,C,SHA2_H_k[5],W[5]); \
+	SHA2_H_ROUND_A(C,D,E,F,G,H,A,B,SHA2_H_k[6],W[6]); \
+	SHA2_H_ROUND_A(B,C,D,E,F,G,H,A,SHA2_H_k[7],W[7]); \
+	SHA2_H_ROUND_A(A,B,C,D,E,F,G,H,SHA2_H_k[8],W[8]); \
+	SHA2_H_ROUND_Z(H,A,B,C,D,E,F,G,SHA2_H_k[9]); \
+	SHA2_H_ROUND_Z(G,H,A,B,C,D,E,F,SHA2_H_k[10]); \
+	SHA2_H_ROUND_Z(F,G,H,A,B,C,D,E,SHA2_H_k[11]); \
+	SHA2_H_ROUND_Z(E,F,G,H,A,B,C,D,SHA2_H_k[12]); \
+	SHA2_H_ROUND_Z(D,E,F,G,H,A,B,C,SHA2_H_k[13]); \
+	SHA2_H_ROUND_Z(C,D,E,F,G,H,A,B,SHA2_H_k[14]); \
+	SHA2_H_ROUND_A(B,C,D,E,F,G,H,A,SHA2_H_k[15],W[15]); \
+	SHA2_H_ROUND_I(A,B,C,D,E,F,G,H,SHA2_H_k[16],W[0],  Z,W[1],W[0],Z) \
+	SHA2_H_ROUND_J(H,A,B,C,D,E,F,G,SHA2_H_k[17],W[1],  W[15],W[2],W[1],Z) \
+	SHA2_H_ROUND_J(G,H,A,B,C,D,E,F,SHA2_H_k[18],W[2],  W[0],W[3],W[2],Z) \
+	SHA2_H_ROUND_J(F,G,H,A,B,C,D,E,SHA2_H_k[19],W[3],  W[1],W[4],W[3],Z) \
+	SHA2_H_ROUND_J(E,F,G,H,A,B,C,D,SHA2_H_k[20],W[4],  W[2],W[5],W[4],Z) \
+	SHA2_H_ROUND_J(D,E,F,G,H,A,B,C,SHA2_H_k[21],W[5],  W[3],W[6],W[5],Z) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[22],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[23],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_K(A,B,C,D,E,F,G,H,SHA2_H_k[24],W[8],  W[6],Z,W[8],W[1]) \
+	SHA2_H_ROUND_L(H,A,B,C,D,E,F,G,SHA2_H_k[25],W[9],  W[7],Z,Z,W[2]) \
+	SHA2_H_ROUND_L(G,H,A,B,C,D,E,F,SHA2_H_k[26],W[10],  W[8],Z,Z,W[3]) \
+	SHA2_H_ROUND_L(F,G,H,A,B,C,D,E,SHA2_H_k[27],W[11],  W[9],Z,Z,W[4]) \
+	SHA2_H_ROUND_L(E,F,G,H,A,B,C,D,SHA2_H_k[28],W[12],  W[10],Z,Z,W[5]) \
+	SHA2_H_ROUND_L(D,E,F,G,H,A,B,C,SHA2_H_k[29],W[13],  W[11],Z,Z,W[6]) \
+	SHA2_H_ROUND_M(C,D,E,F,G,H,A,B,SHA2_H_k[30],W[14],  W[12],W[15],Z,W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[31],W[15],  W[13],W[0],W[15],W[8]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[32],W[0],  W[14],W[1],W[0],W[9]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[33],W[1],  W[15],W[2],W[1],W[10]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[34],W[2],  W[0],W[3],W[2],W[11]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[35],W[3],  W[1],W[4],W[3],W[12]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[36],W[4],  W[2],W[5],W[4],W[13]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[37],W[5],  W[3],W[6],W[5],W[14]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[38],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[39],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[40],W[8],  W[6],W[9],W[8],W[1]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[41],W[9],  W[7],W[10],W[9],W[2]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[42],W[10],  W[8],W[11],W[10],W[3]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[43],W[11],  W[9],W[12],W[11],W[4]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[44],W[12],  W[10],W[13],W[12],W[5]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[45],W[13],  W[11],W[14],W[13],W[6]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[46],W[14],  W[12],W[15],W[14],W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[47],W[15],  W[13],W[0],W[15],W[8]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[48],W[0],  W[14],W[1],W[0],W[9]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[49],W[1],  W[15],W[2],W[1],W[10]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[50],W[2],  W[0],W[3],W[2],W[11]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[51],W[3],  W[1],W[4],W[3],W[12]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[52],W[4],  W[2],W[5],W[4],W[13]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[53],W[5],  W[3],W[6],W[5],W[14]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[54],W[6],  W[4],W[7],W[6],W[15]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[55],W[7],  W[5],W[8],W[7],W[0]) \
+	SHA2_H_ROUND_B(A,B,C,D,E,F,G,H,SHA2_H_k[56],W[8],  W[6],W[9],W[8],W[1]) \
+	SHA2_H_ROUND_B(H,A,B,C,D,E,F,G,SHA2_H_k[57],W[9],  W[7],W[10],W[9],W[2]) \
+	SHA2_H_ROUND_B(G,H,A,B,C,D,E,F,SHA2_H_k[58],W[10],  W[8],W[11],W[10],W[3]) \
+	SHA2_H_ROUND_B(F,G,H,A,B,C,D,E,SHA2_H_k[59],W[11],  W[9],W[12],W[11],W[4]) \
+	SHA2_H_ROUND_B(E,F,G,H,A,B,C,D,SHA2_H_k[60],W[12],  W[10],W[13],W[12],W[5]) \
+	SHA2_H_ROUND_B(D,E,F,G,H,A,B,C,SHA2_H_k[61],W[13],  W[11],W[14],W[13],W[6]) \
+	SHA2_H_ROUND_B(C,D,E,F,G,H,A,B,SHA2_H_k[62],W[14],  W[12],W[15],W[14],W[7]) \
+	SHA2_H_ROUND_B(B,C,D,E,F,G,H,A,SHA2_H_k[63],W[15],  W[13],W[0],W[15],W[8])
 
 #define sha256_init(ctx)	  \
 	{ \
@@ -1176,7 +1176,7 @@ __const_a8 uint k[] = {
 	F = (ctx)[5]; \
 	G = (ctx)[6]; \
 	H = (ctx)[7]; \
-	SHA256(A,B,C,D,E,F,G,H,pad); \
+	SHA2_H_SHA256(A,B,C,D,E,F,G,H,pad); \
 	(ctx)[0] += A; \
 	(ctx)[1] += B; \
 	(ctx)[2] += C; \
@@ -1198,7 +1198,7 @@ __const_a8 uint k[] = {
 	F = (ctx)[5]; \
 	G = (ctx)[6]; \
 	H = (ctx)[7]; \
-	SHA256_ZEROS(A,B,C,D,E,F,G,H,pad); \
+	SHA2_H_SHA256_ZEROS(A,B,C,D,E,F,G,H,pad); \
 	(ctx)[0] += A; \
 	(ctx)[1] += B; \
 	(ctx)[2] += C; \
@@ -1211,14 +1211,14 @@ __const_a8 uint k[] = {
 
 /*
  ***************************************************************************
- * SHA512 below this line
+ * SHA2_H_SHA512 below this line
  ***************************************************************************
  */
 
 #undef Maj
 #undef Ch
 
-#if SHA512_LUT3
+#if SHA2_H_SHA512_LUT3
 #define Ch(x, y, z) lut3_64(x, y, z, 0xca)
 #elif USE_BITSELECT
 #define Ch(x, y, z) bitselect(z, y, x)
@@ -1228,7 +1228,7 @@ __const_a8 uint k[] = {
 #define Ch(x, y, z) (z ^ (x & (y ^ z)))
 #endif
 
-#if SHA512_LUT3
+#if SHA2_H_SHA512_LUT3
 #define Maj(x, y, z) lut3_64(x, y, z, 0xe8)
 #elif USE_BITSELECT
 #define Maj(x, y, z) bitselect(x, y, z ^ x)
@@ -1280,10 +1280,10 @@ __const_a8 ulong K[] = {
 #define ror64(x, n)       rotate(x, (ulong)(64 - n))
 #endif
 
-#if 0 && SHA512_LUT3
+#if 0 && SHA2_H_SHA512_LUT3
 /* LOP3.LUT alternative - does no good */
-#define Sigma0_64(x) lut3_64(ror64(x, 28), ror64(x, 34), ror64(x, 39), 0x96)
-#define Sigma1_64(x) lut3_64(ror64(x, 14), ror64(x, 18), ror64(x, 41), 0x96)
+#define SHA2_H_Sigma0_64(x) lut3_64(ror64(x, 28), ror64(x, 34), ror64(x, 39), 0x96)
+#define SHA2_H_Sigma1_64(x) lut3_64(ror64(x, 14), ror64(x, 18), ror64(x, 41), 0x96)
 #elif 0
 /*
  * These Sigma alternatives are derived from "Fast SHA-256 Implementations
@@ -1292,18 +1292,18 @@ __const_a8 ulong K[] = {
  * (minimizing register copies) but might be better or worse on different
  * hardware for other reasons.
  */
-#define Sigma0_64(x) (ror64(ror64(ror64(x, 5) ^ x, 6) ^ x, 28))
-#define Sigma1_64(x) (ror64(ror64(ror64(x, 23) ^ x, 4) ^ x, 14))
+#define SHA2_H_Sigma0_64(x) (ror64(ror64(ror64(x, 5) ^ x, 6) ^ x, 28))
+#define SHA2_H_Sigma1_64(x) (ror64(ror64(ror64(x, 23) ^ x, 4) ^ x, 14))
 #else
 /* Original SHA-2 function */
-#define Sigma0_64(x) (ror64(x, 28) ^ ror64(x, 34) ^ ror64(x, 39))
-#define Sigma1_64(x) (ror64(x, 14) ^ ror64(x, 18) ^ ror64(x, 41))
+#define SHA2_H_Sigma0_64(x) (ror64(x, 28) ^ ror64(x, 34) ^ ror64(x, 39))
+#define SHA2_H_Sigma1_64(x) (ror64(x, 14) ^ ror64(x, 18) ^ ror64(x, 41))
 #endif
 
-#if 0 && SHA512_LUT3
+#if 0 && SHA2_H_SHA512_LUT3
 /* LOP3.LUT alternative - does no good */
-#define sigma0_64(x) lut3_64(ror64(x, 1), ror64(x, 8), (x >> 7), 0x96)
-#define sigma1_64(x) lut3_64(ror64(x, 19), ror64(x, 61), (x >> 6), 0x96)
+#define SHA2_H_sigma0_64(x) lut3_64(ror64(x, 1), ror64(x, 8), (x >> 7), 0x96)
+#define SHA2_H_sigma1_64(x) lut3_64(ror64(x, 19), ror64(x, 61), (x >> 6), 0x96)
 #elif 0
 /*
  * These sigma alternatives are from "Fast SHA-512 Implementations on Intel
@@ -1314,12 +1314,12 @@ __const_a8 ulong K[] = {
  * that probably doesn't exist for current GPU's as of now since they're all
  * 32-bit (and may not even have 32-bit rotate for that matter).
  */
-#define sigma0_64(x) ((((((x >> 1) ^ x) >> 6) ^ x) >> 1) ^ (((x << 7) ^ x) << 56))
-#define sigma1_64(x) ((((((x >> 42) ^ x) >> 13) ^ x) >> 6) ^ (((x << 42) ^ x) << 3))
+#define SHA2_H_sigma0_64(x) ((((((x >> 1) ^ x) >> 6) ^ x) >> 1) ^ (((x << 7) ^ x) << 56))
+#define SHA2_H_sigma1_64(x) ((((((x >> 42) ^ x) >> 13) ^ x) >> 6) ^ (((x << 42) ^ x) << 3))
 #else
 /* Original SHA-2 function */
-#define sigma0_64(x) (ror64(x, 1)  ^ ror64(x, 8) ^ (x >> 7))
-#define sigma1_64(x) (ror64(x, 19) ^ ror64(x, 61) ^ (x >> 6))
+#define SHA2_H_sigma0_64(x) (ror64(x, 1)  ^ ror64(x, 8) ^ (x >> 7))
+#define SHA2_H_sigma1_64(x) (ror64(x, 19) ^ ror64(x, 61) ^ (x >> 6))
 #endif
 
 #define SHA2_INIT_A	0x6a09e667f3bcc908UL
@@ -1332,19 +1332,19 @@ __const_a8 ulong K[] = {
 #define SHA2_INIT_H	0x5be0cd19137e2179UL
 
 #define ROUND512_A(a, b, c, d, e, f, g, h, ki, wi)	\
-	t = (ki) + (wi) + (h) + Sigma1_64(e) + Ch((e), (f), (g)); \
-	d += (t); h = (t) + Sigma0_64(a) + Maj((a), (b), (c));
+	t = (ki) + (wi) + (h) + SHA2_H_Sigma1_64(e) + Ch((e), (f), (g)); \
+	d += (t); h = (t) + SHA2_H_Sigma0_64(a) + Maj((a), (b), (c));
 
 #define ROUND512_Z(a, b, c, d, e, f, g, h, ki)	\
-	t = (ki) + (h) + Sigma1_64(e) + Ch((e), (f), (g)); \
-	d += (t); h = (t) + Sigma0_64(a) + Maj((a), (b), (c));
+	t = (ki) + (h) + SHA2_H_Sigma1_64(e) + Ch((e), (f), (g)); \
+	d += (t); h = (t) + SHA2_H_Sigma0_64(a) + Maj((a), (b), (c));
 
 #define ROUND512_B(a, b, c, d, e, f, g, h, ki, wi, wj, wk, wl, wm)	  \
-	wi = sigma1_64(wj) + sigma0_64(wk) + wl + wm; \
-	t = (ki) + (wi) + (h) + Sigma1_64(e) + Ch((e), (f), (g)); \
-	d += (t); h = (t) + Sigma0_64(a) + Maj((a), (b), (c));
+	wi = SHA2_H_sigma1_64(wj) + SHA2_H_sigma0_64(wk) + wl + wm; \
+	t = (ki) + (wi) + (h) + SHA2_H_Sigma1_64(e) + Ch((e), (f), (g)); \
+	d += (t); h = (t) + SHA2_H_Sigma0_64(a) + Maj((a), (b), (c));
 
-#define SHA512(A, B, C, D, E, F, G, H, W)	  \
+#define SHA2_H_SHA512(A, B, C, D, E, F, G, H, W)	  \
 	ROUND512_A(A,B,C,D,E,F,G,H,K[0],W[0]) \
 	ROUND512_A(H,A,B,C,D,E,F,G,K[1],W[1]) \
 	ROUND512_A(G,H,A,B,C,D,E,F,K[2],W[2]) \
@@ -1428,7 +1428,7 @@ __const_a8 ulong K[] = {
 
 #define z 0UL
 //W[9]-W[14] are zeros
-#define SHA512_ZEROS(A, B, C, D, E, F, G, H, W)	  \
+#define SHA2_H_SHA512_ZEROS(A, B, C, D, E, F, G, H, W)	  \
 	ROUND512_A(A,B,C,D,E,F,G,H,K[0],W[0]) \
 	ROUND512_A(H,A,B,C,D,E,F,G,K[1],W[1]) \
 	ROUND512_A(G,H,A,B,C,D,E,F,K[2],W[2]) \
@@ -1528,7 +1528,7 @@ inline void sha512_single_s(ulong *W, ulong *output)
 	G = SHA2_INIT_G;
 	H = SHA2_INIT_H;
 
-	SHA512(A, B, C, D, E, F, G, H, W)
+	SHA2_H_SHA512(A, B, C, D, E, F, G, H, W)
 
 	output[0] = A + SHA2_INIT_A;
 	output[1] = B + SHA2_INIT_B;
@@ -1555,7 +1555,7 @@ inline void sha512_single(MAYBE_VECTOR_ULONG *W, MAYBE_VECTOR_ULONG *output)
 	G = SHA2_INIT_G;
 	H = SHA2_INIT_H;
 
-	SHA512(A, B, C, D, E, F, G, H, W)
+	SHA2_H_SHA512(A, B, C, D, E, F, G, H, W)
 
 	output[0] = A + SHA2_INIT_A;
 	output[1] = B + SHA2_INIT_B;
@@ -1581,7 +1581,7 @@ inline void sha512_single_zeros(MAYBE_VECTOR_ULONG *W,
 	G = SHA2_INIT_G;
 	H = SHA2_INIT_H;
 
-	SHA512_ZEROS(A, B, C, D, E, F, G, H, W)
+	SHA2_H_SHA512_ZEROS(A, B, C, D, E, F, G, H, W)
 
 	output[0] = A + SHA2_INIT_A;
 	output[1] = B + SHA2_INIT_B;
@@ -1658,8 +1658,8 @@ inline void sha512(uchar *password, uint8_t pass_len,
 	uint64_t t1, t2;
 #pragma unroll 16
 	for (i = 0; i < 16; i++) {
-		t1 = K[i] + w[i] + h + Sigma1_64(e) + Ch(e, f, g);
-		t2 = Maj(a, b, c) + Sigma0_64(a);
+		t1 = K[i] + w[i] + h + SHA2_H_Sigma1_64(e) + Ch(e, f, g);
+		t2 = Maj(a, b, c) + SHA2_H_Sigma0_64(a);
 
 		h = g;
 		g = f;
@@ -1674,9 +1674,9 @@ inline void sha512(uchar *password, uint8_t pass_len,
 #pragma unroll 61
 	for (i = 16; i < 77; i++) {
 
-		w[i & 15] =sigma1_64(w[(i - 2) & 15]) + sigma0_64(w[(i - 15) & 15]) + w[(i -16) & 15] + w[(i - 7) & 15];
-		t1 = K[i] + w[i & 15] + h + Sigma1_64(e) + Ch(e, f, g);
-		t2 = Maj(a, b, c) + Sigma0_64(a);
+		w[i & 15] =SHA2_H_sigma1_64(w[(i - 2) & 15]) + SHA2_H_sigma0_64(w[(i - 15) & 15]) + w[(i -16) & 15] + w[(i - 7) & 15];
+		t1 = K[i] + w[i & 15] + h + SHA2_H_Sigma1_64(e) + Ch(e, f, g);
+		t2 = Maj(a, b, c) + SHA2_H_Sigma0_64(a);
 
 		h = g;
 		g = f;

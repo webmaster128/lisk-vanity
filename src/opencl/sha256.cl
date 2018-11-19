@@ -1647,7 +1647,7 @@ inline void any_hash_cracked(
 }
 
 inline void sha256_block(	  const uint32_t * const buffer,
-				  const uint32_t total, uint32_t * const H) {
+				  const uint32_t total, uint32_t * const output) {
 
     uint32_t a = H0;
     uint32_t b = H1;
@@ -1716,14 +1716,14 @@ inline void sha256_block(	  const uint32_t * const buffer,
     }
 
     /* Put checksum in context given as argument. */
-    H[0] = (a + H0);
-    H[1] = (b + H1);
-    H[2] = (c + H2);
-    H[3] = (d + H3);
-    H[4] = (e + H4);
-    H[5] = (f + H5);
-    H[6] = (g + H6);
-    H[7] = (h + H7);
+    output[0] = (a + H0);
+    output[1] = (b + H1);
+    output[2] = (c + H2);
+    output[3] = (d + H3);
+    output[4] = (e + H4);
+    output[5] = (f + H5);
+    output[6] = (g + H6);
+    output[7] = (h + H7);
 }
 
 /* *****************

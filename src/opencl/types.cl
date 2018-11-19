@@ -7,3 +7,7 @@ typedef uint uint32_t;
 typedef int int32_t;
 typedef ulong uint64_t;
 typedef long int64_t;
+
+#ifndef _OPENCL_COMPILER
+#define _OPENCL_COMPILER 1
+#endif

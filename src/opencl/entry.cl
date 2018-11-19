@@ -35,15 +35,11 @@ __kernel void generate_pubkey (__global uchar *result, __global uchar *key_root,
 		// privkey or extended privkey
 		key = key_material;
 	}
-	//blake2b_state state;
 	bignum256modm a;
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {
 		uchar hash[64];
 		sha512(key, 32, hash, 0);
-		// blake2b_init (&state, sizeof (hash));
-		// blake2b_update (&state, key, 32);
-		// blake2b_final (&state, hash, sizeof (hash));
 		hash[0] &= 248;
 		hash[31] &= 127;
 		hash[31] |= 64;
