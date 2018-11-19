@@ -3,6 +3,11 @@ use num_traits::pow;
 
 use derivation::pubkey_to_address;
 
+// largest valid address
+pub fn max_address(max_len: usize) -> u64 {
+    if max_len >= 20 { 18446744073709551615u64 } else { pow(10u64, max_len) - 1 }
+}
+
 pub struct PubkeyMatcher {
     max_address_value: u64,
 }
@@ -11,10 +16,8 @@ impl PubkeyMatcher {
     pub fn new(max_len: usize) -> PubkeyMatcher {
         assert!(max_len >= 1);
 
-        let max_address_value = if max_len >= 20 { 18446744073709551615u64 } else { pow(10u64, max_len) - 1 };
-
         PubkeyMatcher {
-            max_address_value,
+            max_address_value: max_address(max_len),
         }
     }
 
@@ -38,6 +41,17 @@ impl PubkeyMatcher {
 mod tests {
     // importing names from outer (for mod tests) scope.
     use super::*;
+
+    #[test]
+    fn test_max_address() {
+        assert_eq!(max_address(2000), 18446744073709551615u64);
+        assert_eq!(max_address(200), 18446744073709551615u64);
+        assert_eq!(max_address(20), 18446744073709551615u64);
+        assert_eq!(max_address(15), 999999999999999u64);
+        assert_eq!(max_address(10), 9999999999u64);
+        assert_eq!(max_address(2), 99u64);
+        assert_eq!(max_address(1), 9u64);
+    }
 
     #[test]
     fn test_estimated_attempts() {

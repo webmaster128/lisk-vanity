@@ -32,7 +32,7 @@ mod derivation;
 use derivation::{pubkey_to_address, secret_to_pubkey, GenerateKeyType};
 
 mod pubkey_matcher;
-use pubkey_matcher::PubkeyMatcher;
+use pubkey_matcher::{PubkeyMatcher, max_address};
 
 #[cfg(feature = "gpu")]
 mod gpu;
@@ -264,7 +264,7 @@ fn main() {
             gpu_platform,
             gpu_device,
             gpu_threads,
-            &params.matcher,
+            max_address(max_length),
             gen_key_ty,
         ).unwrap();
         gpu_thread = Some(thread::spawn(move || {

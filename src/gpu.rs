@@ -7,8 +7,9 @@ use ocl::Platform;
 use ocl::ProQue;
 use ocl::Result;
 
+use ocl_core::Ulong;
+
 use derivation::GenerateKeyType;
-use pubkey_matcher::PubkeyMatcher;
 
 pub struct Gpu {
     kernel: ocl::Kernel,
@@ -21,7 +22,7 @@ impl Gpu {
         platform_idx: usize,
         device_idx: usize,
         threads: usize,
-        _matcher: &PubkeyMatcher,
+        max_address_value: u64,
         generate_key_type: GenerateKeyType,
     ) -> Result<Gpu> {
         let mut prog_bldr = ProgramBuilder::new();
@@ -31,8 +32,7 @@ impl Gpu {
             .src(include_str!("opencl/curve25519-constants.cl"))
             .src(include_str!("opencl/curve25519-constants2.cl"))
             .src(include_str!("opencl/curve25519.cl"))
-            .src(include_str!("opencl/sha256.cl"))
-            .src(include_str!("opencl/sha512.cl"))
+            .src(include_str!("opencl/sha2.cl"))
             .src(include_str!("opencl/entry.cl"));
         let platforms = Platform::list();
         if platforms.len() == 0 {
@@ -79,9 +79,9 @@ impl Gpu {
             .build()?;
         pro_que.set_dims(1);
 
-        // req.write(matcher.req()).enq()?;
-        // mask.write(matcher.mask()).enq()?;
+        // Set data
         result.write(&[0u8; 32] as &[u8]).enq()?;
+
         let gen_key_type_code: u8 = match generate_key_type {
             GenerateKeyType::PrivateKey => 0,
         };
