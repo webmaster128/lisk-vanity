@@ -17,7 +17,7 @@ and some hand-selected modifications
 
 */
 
-
+// File: src/opencl_device_info.h
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
@@ -83,6 +83,7 @@ and some hand-selected modifications
 #endif
 
 #endif	/* OPENCL_DEVICE_INFO_H */
+// File: src/opencl_misc.h
 /*
  * OpenCL common macros
  *
@@ -869,6 +870,7 @@ inline int memmem_pc(const void *haystack, size_t haystack_len,
 	} while (0)
 
 #endif
+// File: src/opencl_sha2.h
 /*
  * This software is Copyright (c) 2013 Lukas Odzioba <ukasz at openwall dot net>
  * and Copyright (c) 2014-2018 magnum
@@ -1592,6 +1594,7 @@ inline void sha512_single_zeros(MAYBE_VECTOR_ULONG *W,
 }
 
 #endif /* _OPENCL_SHA2_H */
+// File: opencl/sha512_kernel.cl
 /*
  * This software is Copyright (c) 2012 Myrice <qqlddg at gmail dot com>
  * and it is hereby released to the general public under the following terms:

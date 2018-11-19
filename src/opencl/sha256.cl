@@ -3,17 +3,25 @@
 Generated using
 
 (
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_device_info.h
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_misc.h
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_mask_extras.h
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha2_common.h 
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha256.h   
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_rawsha256.h
- curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl/sha256_kernel.cl
+  echo "// File: src/opencl_device_info.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_device_info.h
+  echo "// File: src/opencl_misc.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_misc.h
+  echo "// File: src/opencl_mask_extras.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_mask_extras.h
+  echo "// File: src/opencl_sha2_common.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha2_common.h
+  echo "// File: src/opencl_sha256.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha256.h
+  echo "// File: src/opencl_rawsha256.h"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_rawsha256.h
+  echo "// File: opencl/sha256_kernel.cl"
+  curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl/sha256_kernel.cl
 ) | grep -v '#include "' > src/opencl/sha256.cl
 
 */
 
+// File: src/opencl_device_info.h
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
@@ -79,6 +87,7 @@ Generated using
 #endif
 
 #endif	/* OPENCL_DEVICE_INFO_H */
+// File: src/opencl_misc.h
 /*
  * OpenCL common macros
  *
@@ -865,6 +874,7 @@ inline int memmem_pc(const void *haystack, size_t haystack_len,
 	} while (0)
 
 #endif
+// File: src/opencl_mask_extras.h
 /*
  * This file is part of John the Ripper password cracker.
  *
@@ -908,6 +918,7 @@ inline int memmem_pc(const void *haystack, size_t haystack_len,
 #endif
 
 #endif
+// File: src/opencl_sha2_common.h
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
@@ -1347,6 +1358,7 @@ int common_salt_hash(void *salt, int salt_size, int salt_hash_size);
 #endif
 
 #endif                          /* OPENCL_SHA2_COMMON_H */
+// File: src/opencl_sha256.h
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
@@ -1490,6 +1502,7 @@ __const_a8 uint32_t clear_be_mask[] = {
 #endif
 
 #endif                          /* OPENCL_SHA256_H */
+// File: src/opencl_rawsha256.h
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
@@ -1557,6 +1570,7 @@ static const char *warn[] = {
 #endif
 
 #endif                          /* _RAWSHA256_H */
+// File: opencl/sha256_kernel.cl
 /*
  * Developed by Claudio André <claudioandre.br at gmail.com> in 2012
  *
