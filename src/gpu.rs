@@ -26,7 +26,6 @@ impl Gpu {
         let mut prog_bldr = ProgramBuilder::new();
         prog_bldr
             .src(include_str!("opencl/types.cl"))
-            .src(include_str!("opencl/blake2b.cl"))
             .src(include_str!("opencl/curve25519-constants.cl"))
             .src(include_str!("opencl/curve25519-constants2.cl"))
             .src(include_str!("opencl/curve25519.cl"))

@@ -34,12 +34,6 @@ __kernel void generate_pubkey(
 	if (generate_key_type == 1) {
 		// seed
 		uchar genkey[32];
-		blake2b_state keystate;
-		blake2b_init (&keystate, sizeof (genkey));
-		blake2b_update (&keystate, key_material, sizeof (key_material));
-		uint idx = 0;
-		blake2b_update (&keystate, (uchar *) &idx, 4);
-		blake2b_final (&keystate, genkey, sizeof (genkey));
 		key = genkey;
 	} else {
 		// privkey or extended privkey
