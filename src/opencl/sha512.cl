@@ -7,8 +7,8 @@ Generated using
     curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_device_info.h
     echo "// File: src/opencl_misc.h"
     curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_misc.h
-    echo "// File: src/opencl_sha2_common.h"
-    curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha2_common.h
+    echo "// File: src/opencl_sha2.h"
+    curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl_sha2.h
     echo "// File: opencl/sha512_kernel.cl"
     curl -sS --location https://github.com/magnumripper/JohnTheRipper/raw/bleeding-jumbo/src/opencl/sha512_kernel.cl
 ) | grep -v '#include "' > src/opencl/sha512.cl
