@@ -20,8 +20,6 @@ inline uint64_t pubkey_to_address(const uchar pubkey[32]) {
 __kernel void generate_pubkey(
 	__global uchar *result,
 	__global uchar *key_root,
-	__global uchar *pub_req,
-	__global uchar *pub_mask,
 	uchar prefix_len,
 	uchar generate_key_type,
 	__global uchar *public_offset

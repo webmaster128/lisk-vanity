@@ -61,15 +61,6 @@ impl Gpu {
             .buffer_builder::<u8>()
             .flags(MemFlags::new().read_only().host_write_only())
             .build()?;
-        pro_que.set_dims(4);
-        let req = pro_que
-            .buffer_builder::<u8>()
-            .flags(MemFlags::new().read_only().host_write_only())
-            .build()?;
-        let mask = pro_que
-            .buffer_builder::<u8>()
-            .flags(MemFlags::new().read_only().host_write_only())
-            .build()?;
         pro_que.set_dims(32);
         let public_offset = pro_que
             .buffer_builder::<u8>()
@@ -89,8 +80,6 @@ impl Gpu {
             .global_work_size(threads)
             .arg(&result)
             .arg(&key_root)
-            .arg(&req)
-            .arg(&mask)
             .arg(4 as u8)
             .arg(gen_key_type_code)
             .arg(&public_offset)
