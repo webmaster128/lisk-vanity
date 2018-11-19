@@ -1,5 +1,7 @@
+#![feature(int_to_from_bytes)]
+#![feature(try_from)]
+
 use std::f64;
-use std::iter;
 use std::process;
 use std::sync::atomic;
 use std::sync::atomic::AtomicUsize;
@@ -7,24 +9,19 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-extern crate curve25519_dalek;
-use curve25519_dalek::edwards::CompressedEdwardsY;
-
-extern crate blake2;
+extern crate sha2;
 extern crate clap;
 extern crate digest;
 extern crate ed25519_dalek;
 extern crate hex;
+extern crate num_bigint;
 extern crate num_cpus;
 
 extern crate rand;
 use rand::{OsRng, Rng};
 
-extern crate num_bigint;
-use num_bigint::BigInt;
-
 extern crate num_traits;
-use num_traits::{ToPrimitive, Zero};
+use num_traits::{ToPrimitive};
 
 #[cfg(feature = "gpu")]
 extern crate ocl;
@@ -32,7 +29,7 @@ extern crate ocl;
 extern crate ocl_core;
 
 mod derivation;
-use derivation::{pubkey_to_address, secret_to_pubkey, GenerateKeyType, ADDRESS_ALPHABET};
+use derivation::{pubkey_to_address, secret_to_pubkey, GenerateKeyType};
 
 mod pubkey_matcher;
 use pubkey_matcher::PubkeyMatcher;
@@ -58,23 +55,6 @@ impl Gpu {
     }
 }
 
-fn char_byte_mask(ch: char) -> (u8, u8) {
-    if ch == '.' || ch == '*' {
-        (0, 0)
-    } else if ch == '#' {
-        (0, (1 << 5) - (1 << 3))
-    } else {
-        let lookup = ADDRESS_ALPHABET.iter().position(|&c| (c as char) == ch);
-        match lookup {
-            Some(p) => (p as u8, (1 << 5) - 1),
-            None => {
-                eprintln!("Invalid character in prefix: {:?}", ch);
-                process::exit(1);
-            }
-        }
-    }
-}
-
 fn print_solution(
     secret_key_material: [u8; 32],
     secret_key_type: GenerateKeyType,
@@ -85,24 +65,15 @@ fn print_solution(
         println!(
             "{} {}",
             hex::encode_upper(&secret_key_material as &[u8]),
-            pubkey_to_address(public_key),
+            pubkey_to_address(&public_key),
         );
     } else {
         match secret_key_type {
             GenerateKeyType::PrivateKey => println!(
-                "Found matching account!\nPrivate Key: {}\nAddress:     {}",
+                "Found matching account!\nPrivate Key: {}{}\nAddress:     {}",
                 hex::encode_upper(&secret_key_material as &[u8]),
-                pubkey_to_address(public_key),
-            ),
-            GenerateKeyType::Seed => println!(
-                "Found matching account!\nSeed:    {}\nAddress: {}",
-                hex::encode_upper(&secret_key_material as &[u8]),
-                pubkey_to_address(public_key),
-            ),
-            GenerateKeyType::ExtendedPrivateKey(_) => println!(
-                "Found matching account!\nExtended private key: {}\nAddress:              {}",
-                hex::encode_upper(&secret_key_material as &[u8]),
-                pubkey_to_address(public_key),
+                hex::encode_upper(&public_key),
+                full_address(pubkey_to_address(&public_key)),
             ),
         }
     }
@@ -116,6 +87,10 @@ struct ThreadParams {
     simple_output: bool,
     generate_key_type: GenerateKeyType,
     matcher: Arc<PubkeyMatcher>,
+}
+
+fn full_address(address: u64) -> String {
+    return format!("{}L", address);
 }
 
 fn check_solution(params: &ThreadParams, key_material: [u8; 32]) -> bool {
@@ -142,21 +117,16 @@ fn check_solution(params: &ThreadParams, key_material: [u8; 32]) -> bool {
 }
 
 fn main() {
-    let args = clap::App::new("nano-vanity")
+    let args = clap::App::new("lisk-vanity")
         .version(env!("CARGO_PKG_VERSION"))
         .author("Lee Bousfield <ljbousfield@gmail.com>")
-        .about("Generate NANO cryptocurrency addresses with a given prefix")
+        .about("Generate short Lisk addresses")
         .arg(
-            clap::Arg::with_name("prefix")
-                .value_name("PREFIX")
+            clap::Arg::with_name("length")
+                .value_name("LENGTH")
+                .default_value("14")
                 .required_unless("suffix")
-                .help("The prefix for the address"),
-        ).arg(
-            clap::Arg::with_name("suffix")
-                .short("s")
-                .long("suffix")
-                .value_name("SUFFIX")
-                .help("The suffix for the address (characters are ordered normally)"),
+                .help("The max length for the address"),
         ).arg(
             clap::Arg::with_name("generate_seed")
                 .long("generate-seed")
@@ -205,102 +175,15 @@ fn main() {
                 .value_name("INDEX")
                 .default_value("0")
                 .help("The GPU device to use"),
-        ).arg(
-            clap::Arg::with_name("public_offset")
-                .long("public-offset")
-                .conflicts_with("generate_seed")
-                .value_name("HEX")
-                .help(
-                    "The curve point of the blinding factor (used to mine keys for somebody else)",
-                ),
         ).get_matches();
-    let mut ext_pubkey_req = BigInt::default();
-    let mut ext_pubkey_mask = BigInt::default();
-    if let Some(mut prefix) = args.value_of("prefix") {
-        if prefix.starts_with("xrb_") {
-            prefix = &prefix[4..];
-        }
-        let mut prefix_chars = prefix.chars();
-        let mut prefix_req = BigInt::default();
-        let mut prefix_mask = BigInt::default();
-        for ch in (&mut prefix_chars).chain(iter::repeat('.')).take(60) {
-            let (byte, mask) = char_byte_mask(ch);
-            debug_assert!(byte & !mask == 0);
-            prefix_req = prefix_req << 5;
-            prefix_req = prefix_req + byte;
-            prefix_mask = prefix_mask << 5;
-            prefix_mask = prefix_mask + mask;
-        }
-        ext_pubkey_req = prefix_req;
-        ext_pubkey_mask = prefix_mask;
-        if prefix_chars.next().is_some() {
-            eprintln!("Warning: prefix too long.");
-            eprintln!(
-                "Only the first 60 characters of your prefix (not including xrb_) will be used."
-            );
-            eprintln!("");
-        }
-    }
-    if let Some(suffix) = args.value_of("suffix") {
-        let mut suffix_chars = suffix.chars();
-        let mut suffix_req = BigInt::default();
-        let mut suffix_mask = BigInt::default();
-        for ch in (&mut suffix_chars).take(60) {
-            let (byte, mask) = char_byte_mask(ch);
-            debug_assert!(byte & !mask == 0);
-            suffix_req = suffix_req << 5;
-            suffix_req = suffix_req + byte;
-            suffix_mask = suffix_mask << 5;
-            suffix_mask = suffix_mask + mask;
-        }
-        if ext_pubkey_mask
-            .to_bytes_le()
-            .1
-            .into_iter()
-            .zip(suffix_mask.to_bytes_le().1.into_iter())
-            .any(|(a, b)| a & b != 0)
-        {
-            eprintln!("Error: prefix and suffix restrict the same character position.");
-            eprintln!("Look for duplicate character positions and resolve the conflict.");
-            process::exit(1);
-        }
-        ext_pubkey_req = ext_pubkey_req + suffix_req;
-        ext_pubkey_mask = ext_pubkey_mask + suffix_mask;
-        if suffix_chars.next().is_some() {
-            eprintln!("Warning: suffix too long.");
-            eprintln!("Only the first 60 characters of your suffix will be used.");
-            eprintln!("");
-        }
-    }
-    if ext_pubkey_mask.is_zero() {
-        eprintln!("You must specify a non-empty prefix or suffix");
-        process::exit(1);
-    }
-    let mut ext_pubkey_req = ext_pubkey_req.to_bytes_be().1;
-    let mut ext_pubkey_mask = ext_pubkey_mask.to_bytes_be().1;
-    if ext_pubkey_req.len() > 37 {
-        eprintln!("Error: requested public key required is longer than possible.");
-        eprintln!("An address can only start with 1 or 3.");
-        eprintln!(
-            "To generate the prefix after that, add a period to the beginning of your prefix."
-        );
-        process::exit(1);
-    } else if ext_pubkey_req.len() < 37 {
-        ext_pubkey_req = iter::repeat(0)
-            .take(37 - ext_pubkey_req.len())
-            .chain(ext_pubkey_req.into_iter())
-            .collect();
-    }
-    if ext_pubkey_mask.len() > 37 {
-        let len = ext_pubkey_mask.len();
-        ext_pubkey_mask = ext_pubkey_mask.split_off(len - 37);
-    } else if ext_pubkey_mask.len() < 37 {
-        ext_pubkey_mask = iter::repeat(0)
-            .take(37 - ext_pubkey_mask.len())
-            .chain(ext_pubkey_mask.into_iter())
-            .collect();
-    }
-    let matcher_base = PubkeyMatcher::new(ext_pubkey_req, ext_pubkey_mask);
+        
+    let max_length = args
+        .value_of("length")
+        .unwrap()
+        .parse()
+        .expect("Failed to parse LENGTH");
+
+    let matcher_base = PubkeyMatcher::new(max_length);
     let estimated_attempts = matcher_base.estimated_attempts();
     let matcher_base = Arc::new(matcher_base);
     let limit = args
@@ -312,31 +195,9 @@ fn main() {
     let attempts_base = Arc::new(AtomicUsize::new(0));
     let output_progress = !args.is_present("no_progress");
     let simple_output = args.is_present("simple_output");
-    let generate_seed = args.is_present("generate_seed");
-    let public_offset_bytes = args.value_of("public_offset").map(hex::decode).map(|r| {
-        let bytes = r.expect("Failed to parse public offset as hex");
-        if bytes.len() != 32 {
-            panic!(
-                "Public offset length was {} bytes, not 32 bytes as expected",
-                bytes.len(),
-            );
-        }
-        let mut slice = [0u8; 32];
-        slice.copy_from_slice(&bytes);
-        slice
-    });
-    let public_offset = public_offset_bytes.map(|b| {
-        CompressedEdwardsY(b)
-            .decompress()
-            .expect("Public offset was not valid edwards curve point")
-    });
-    let gen_key_ty = if let Some(offset) = public_offset {
-        GenerateKeyType::ExtendedPrivateKey(offset)
-    } else if generate_seed {
-        GenerateKeyType::Seed
-    } else {
-        GenerateKeyType::PrivateKey
-    };
+    let _generate_passphrase = args.is_present("generate_passphrase");
+    
+    let gen_key_ty = GenerateKeyType::PrivateKey;
     let threads = args
         .value_of("threads")
         .map(|s| s.parse().expect("Failed to parse thread count option"))
@@ -449,7 +310,7 @@ fn main() {
                 "\rTried {} keys (~{:.2}%; {:.1} keys/s)",
                 attempts, estimated_percent, keys_per_second,
             );
-            thread::sleep(Duration::from_millis(250));
+            thread::sleep(Duration::from_millis(100));
         });
     }
     if let Some(gpu_thread) = gpu_thread {

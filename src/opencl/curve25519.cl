@@ -1,6 +1,5 @@
 // Cobbled together from the ed25519 reference implementation.
 
-typedef short uint16_t;
 typedef int int32_t;
 
 #define mul32x32_64(a,b) (((uint64_t)(a))*(b))

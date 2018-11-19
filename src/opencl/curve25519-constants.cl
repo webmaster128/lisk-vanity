@@ -1,7 +1,3 @@
-typedef uchar uint8_t;
-typedef uint uint32_t;
-typedef ulong uint64_t;
-
 #define ALIGN(x) __attribute__((aligned(x)))
 
 /* multiples of the base point in packed {ysubx, xaddy, t2d} form */

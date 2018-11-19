@@ -21,15 +21,18 @@ impl Gpu {
         platform_idx: usize,
         device_idx: usize,
         threads: usize,
-        matcher: &PubkeyMatcher,
+        _matcher: &PubkeyMatcher,
         generate_key_type: GenerateKeyType,
     ) -> Result<Gpu> {
         let mut prog_bldr = ProgramBuilder::new();
         prog_bldr
+            .src(include_str!("opencl/types.cl"))
             .src(include_str!("opencl/blake2b.cl"))
             .src(include_str!("opencl/curve25519-constants.cl"))
             .src(include_str!("opencl/curve25519-constants2.cl"))
             .src(include_str!("opencl/curve25519.cl"))
+            .src(include_str!("opencl/sha256.cl"))
+            .src(include_str!("opencl/sha512.cl"))
             .src(include_str!("opencl/entry.cl"));
         let platforms = Platform::list();
         if platforms.len() == 0 {
@@ -60,7 +63,7 @@ impl Gpu {
             .buffer_builder::<u8>()
             .flags(MemFlags::new().read_only().host_write_only())
             .build()?;
-        pro_que.set_dims(matcher.prefix_len());
+        pro_que.set_dims(4);
         let req = pro_que
             .buffer_builder::<u8>()
             .flags(MemFlags::new().read_only().host_write_only())
@@ -76,17 +79,11 @@ impl Gpu {
             .build()?;
         pro_que.set_dims(1);
 
-        req.write(matcher.req()).enq()?;
-        mask.write(matcher.mask()).enq()?;
+        // req.write(matcher.req()).enq()?;
+        // mask.write(matcher.mask()).enq()?;
         result.write(&[0u8; 32] as &[u8]).enq()?;
         let gen_key_type_code: u8 = match generate_key_type {
             GenerateKeyType::PrivateKey => 0,
-            GenerateKeyType::Seed => 1,
-            GenerateKeyType::ExtendedPrivateKey(offset) => {
-                let compressed = offset.compress();
-                public_offset.write(compressed.as_bytes() as &[u8]).enq()?;
-                2
-            }
         };
 
         let kernel = pro_que
@@ -96,7 +93,7 @@ impl Gpu {
             .arg(&key_root)
             .arg(&req)
             .arg(&mask)
-            .arg(matcher.prefix_len() as u8)
+            .arg(4 as u8)
             .arg(gen_key_type_code)
             .arg(&public_offset)
             .build()?;
