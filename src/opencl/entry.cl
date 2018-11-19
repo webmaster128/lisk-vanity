@@ -33,6 +33,7 @@ __kernel void generate_pubkey(
 	uchar *key;
 	if (generate_key_type == 1) {
 		// seed
+		// for whatever reason, this does not work without this block
 		uchar genkey[32];
 		key = genkey;
 	} else {
