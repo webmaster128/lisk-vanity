@@ -17,6 +17,10 @@ inline uint64_t pubkey_to_address(const uchar *pubkey) {
 	return out;
 }
 
+inline uint64_t* eight_bytes_from(const uchar *data, uint offset) {
+	return (uint64_t*) (data + offset);
+}
+
 __kernel void generate_pubkey(
 	__global uchar *result,
 	__global uchar *key_root,
@@ -24,12 +28,14 @@ __kernel void generate_pubkey(
 	uchar generate_key_type,
 	__global uchar *public_offset
 ) {
-	size_t const thread_id = get_global_id(0);
+	uint64_t const thread_id = get_global_id(0);
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
 		key_material[i] = key_root[i];
 	}
-	*((size_t *) key_material) += thread_id;
+	// manipulate the first 8 bytes in the right half of the data
+	*eight_bytes_from(key_material, 16) ^= thread_id;
+
 	uchar *key;
 	if (generate_key_type == 1) {
 		// seed
