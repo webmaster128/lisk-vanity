@@ -1,11 +1,13 @@
 use std::convert::TryFrom;
 
+use bip39::{Mnemonic, MnemonicType, Language};
 use ed25519_dalek::{PublicKey, SecretKey};
-
 use sha2::{Digest,Sha256,Sha512};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GenerateKeyType {
+    // Lisk, RISE, Shift etc.
+    LiskPassphrase,
     PrivateKey,
 }
 
@@ -15,8 +17,23 @@ fn ed25519_privkey_to_pubkey(sec: &[u8; 32]) -> [u8; 32] {
     public_key.to_bytes()
 }
 
+pub fn entropy_to_lisk_passphrase(entropy: &[u8; 16]) -> String {
+    let mnemonic = Mnemonic::from_entropy(entropy, MnemonicType::Type12Words, Language::English, "").unwrap();
+    mnemonic.get_string()
+}
+
+pub fn cut_last_16(indata: &[u8; 32]) -> &[u8; 16] {
+    <&[u8; 16]>::try_from(&indata[16..32]).unwrap()
+}
+
 pub fn secret_to_pubkey(key_material: [u8; 32], generate_key_type: GenerateKeyType) -> [u8; 32] {
     match generate_key_type {
+        GenerateKeyType::LiskPassphrase => {
+            let mnemonic = entropy_to_lisk_passphrase(cut_last_16(&key_material));
+            let hash = Sha256::digest(mnemonic.as_bytes());
+            let hash_with_right_length = <&[u8; 32]>::try_from(&hash[0..32]).unwrap();
+            ed25519_privkey_to_pubkey(hash_with_right_length)
+        },
         GenerateKeyType::PrivateKey => ed25519_privkey_to_pubkey(&key_material),
     }
 }
@@ -46,6 +63,44 @@ mod tests {
                 .unwrap(),
         );
         assert_eq!(ed25519_privkey_to_pubkey(&privkey), expected_pubkey);
+    }
+
+    #[test]
+    fn test_entropy_to_lisk_passphrase() {
+        // https://github.com/iov-one/iov-core/blob/v0.9.1/packages/iov-crypto/src/bip39.spec.ts#L13
+        let mut entropy = [0u8; 16];
+
+        entropy.copy_from_slice(
+            &hex::decode("00000000000000000000000000000000").unwrap(),
+        );
+        assert_eq!(
+            entropy_to_lisk_passphrase(&entropy),
+            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+        );
+
+        entropy.copy_from_slice(
+            &hex::decode("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap(),
+        );
+        assert_eq!(
+            entropy_to_lisk_passphrase(&entropy),
+            "legal winner thank year wave sausage worth useful legal winner thank yellow"
+        );
+
+        entropy.copy_from_slice(
+            &hex::decode("80808080808080808080808080808080").unwrap(),
+        );
+        assert_eq!(
+            entropy_to_lisk_passphrase(&entropy),
+            "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"
+        );
+
+        entropy.copy_from_slice(
+            &hex::decode("ffffffffffffffffffffffffffffffff").unwrap(),
+        );
+        assert_eq!(
+            entropy_to_lisk_passphrase(&entropy),
+            "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"
+        );
     }
 
     #[test]

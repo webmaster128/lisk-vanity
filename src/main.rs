@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+extern crate bip39;
 extern crate sha2;
 extern crate clap;
 extern crate digest;
@@ -29,7 +30,7 @@ extern crate ocl;
 extern crate ocl_core;
 
 mod derivation;
-use derivation::{pubkey_to_address, secret_to_pubkey, GenerateKeyType};
+use derivation::{cut_last_16, entropy_to_lisk_passphrase, pubkey_to_address, secret_to_pubkey, GenerateKeyType};
 
 mod pubkey_matcher;
 use pubkey_matcher::{PubkeyMatcher, max_address};
@@ -69,6 +70,11 @@ fn print_solution(
         );
     } else {
         match secret_key_type {
+            GenerateKeyType::LiskPassphrase => println!(
+                "Found matching account!\nPrivate Key: {}\nAddress:     {}",
+                entropy_to_lisk_passphrase(cut_last_16(&secret_key_material)),
+                full_address(pubkey_to_address(&public_key)),
+            ),
             GenerateKeyType::PrivateKey => println!(
                 "Found matching account!\nPrivate Key: {}{}\nAddress:     {}",
                 hex::encode_upper(&secret_key_material as &[u8]),
@@ -127,9 +133,10 @@ fn main() {
                 .required_unless("suffix")
                 .help("The max length for the address"),
         ).arg(
-            clap::Arg::with_name("generate_seed")
-                .long("generate-seed")
-                .help("Generate a seed instead of a private key"),
+            clap::Arg::with_name("generate_keypair")
+                .short("k")
+                .long("generate-keypair")
+                .help("Generate a key pair instead of a passphrase"),
         ).arg(
             clap::Arg::with_name("threads")
                 .short("t")
@@ -196,7 +203,13 @@ fn main() {
     let simple_output = args.is_present("simple_output");
     let _generate_passphrase = args.is_present("generate_passphrase");
     
-    let gen_key_ty = GenerateKeyType::PrivateKey;
+    let gen_key_type;
+    if args.is_present("generate_keypair") {
+        gen_key_type = GenerateKeyType::PrivateKey;
+    } else {
+        gen_key_type = GenerateKeyType::LiskPassphrase;
+    }
+
     let threads = args
         .value_of("threads")
         .map(|s| s.parse().expect("Failed to parse thread count option"))
@@ -211,7 +224,7 @@ fn main() {
             limit,
             output_progress,
             simple_output,
-            generate_key_type: gen_key_ty.clone(),
+            generate_key_type: gen_key_type.clone(),
             matcher: matcher_base.clone(),
             found_n: found_n_base.clone(),
             attempts: attempts_base.clone(),
@@ -254,7 +267,7 @@ fn main() {
             limit,
             output_progress,
             simple_output,
-            generate_key_type: gen_key_ty.clone(),
+            generate_key_type: gen_key_type.clone(),
             matcher: matcher_base.clone(),
             found_n: found_n_base.clone(),
             attempts: attempts_base.clone(),
@@ -264,7 +277,7 @@ fn main() {
             gpu_device,
             gpu_threads,
             max_address(max_length),
-            gen_key_ty,
+            gen_key_type,
         ).unwrap();
         gpu_thread = Some(thread::spawn(move || {
             let mut rng = OsRng::new().expect("Failed to get RNG for seed");

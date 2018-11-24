@@ -14,6 +14,7 @@ default = ["gpu"]
 
 [dependencies]
 ed25519-dalek = "0.6.1"
+bip39 = "0.5.1"
 clap = "2.30.0"
 num_cpus = "1.8.0"
 num-bigint = "0.1.43"

@@ -71,7 +71,8 @@ impl Gpu {
         result.write(&[0u8; 32] as &[u8]).enq()?;
 
         let gen_key_type_code: u8 = match generate_key_type {
-            GenerateKeyType::PrivateKey => 0,
+            GenerateKeyType::LiskPassphrase => 0,
+            GenerateKeyType::PrivateKey => 1,
         };
 
         let kernel = pro_que

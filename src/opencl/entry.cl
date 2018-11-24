@@ -37,8 +37,8 @@ __kernel void generate_pubkey(
 	*eight_bytes_from(key_material, 16) ^= thread_id;
 
 	uchar *key;
-	if (generate_key_type == 1) {
-		// seed
+	if (generate_key_type == 0) {
+		// lisk passphrase
 		// for whatever reason, this does not work without this block
 		uchar genkey[32];
 		key = genkey;
