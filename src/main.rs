@@ -9,7 +9,6 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-extern crate bip39;
 extern crate sha2;
 extern crate clap;
 extern crate digest;
@@ -29,8 +28,11 @@ extern crate ocl;
 #[cfg(feature = "gpu")]
 extern crate ocl_core;
 
+mod cpu;
+use cpu::bip39::{entropy_to_mnemonic};
+
 mod derivation;
-use derivation::{cut_last_16, entropy_to_lisk_passphrase, pubkey_to_address, secret_to_pubkey, GenerateKeyType};
+use derivation::{cut_last_16, pubkey_to_address, secret_to_pubkey, GenerateKeyType};
 
 mod pubkey_matcher;
 use pubkey_matcher::{PubkeyMatcher, max_address};
@@ -72,7 +74,7 @@ fn print_solution(
         match secret_key_type {
             GenerateKeyType::LiskPassphrase => println!(
                 "Found matching account!\nPrivate Key: {}\nAddress:     {}",
-                entropy_to_lisk_passphrase(cut_last_16(&secret_key_material)),
+                String::from_utf8(entropy_to_mnemonic(cut_last_16(&secret_key_material))).unwrap(),
                 full_address(pubkey_to_address(&public_key)),
             ),
             GenerateKeyType::PrivateKey => println!(
