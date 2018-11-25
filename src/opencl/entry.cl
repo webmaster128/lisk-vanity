@@ -36,11 +36,10 @@ __kernel void generate_pubkey(
 	// manipulate the first 8 bytes in the right half of the data
 	*eight_bytes_from(key_material, 16) ^= thread_id;
 
+	uchar menomic_hash[32];
 	uchar *key;
 	if (generate_key_type == 0) {
 		// lisk passphrase
-		// for whatever reason, this does not work without this block
-		uchar menomic_hash[32];
 		bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
 		key = menomic_hash;
 	} else {
