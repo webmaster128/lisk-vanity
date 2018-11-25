@@ -1,4 +1,4 @@
-use ocl;
+use ocl::{Device};
 use ocl::builders::DeviceSpecifier;
 use ocl::builders::ProgramBuilder;
 use ocl::flags::MemFlags;
@@ -43,6 +43,10 @@ impl Gpu {
                 platforms.len() - 1
             ).into());
         }
+
+        let device = Device::by_idx_wrap(platforms[platform_idx], device_idx).expect("Requested device not found");
+        eprintln!("Using GPU {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
+
         let mut pro_que = ProQue::builder()
             .prog_bldr(prog_bldr)
             .platform(platforms[platform_idx])
@@ -50,8 +54,7 @@ impl Gpu {
             .dims(64)
             .build()?;
 
-        let device = pro_que.device();
-        eprintln!("Initializing GPU {} {}", device.vendor()?, device.name()?);
+        eprintln!("GPU programm sucessfully compiled.");
 
         let result = pro_que
             .buffer_builder::<u8>()
