@@ -54,7 +54,7 @@ impl Gpu {
             .dims(64)
             .build()?;
 
-        eprintln!("GPU programm sucessfully compiled.");
+        eprintln!("GPU program successfully compiled.");
 
         let result = pro_que
             .buffer_builder::<u8>()
