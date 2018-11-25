@@ -40,8 +40,9 @@ __kernel void generate_pubkey(
 	if (generate_key_type == 0) {
 		// lisk passphrase
 		// for whatever reason, this does not work without this block
-		uchar genkey[32];
-		key = genkey;
+		uchar menomic_hash[32];
+		bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
+		key = menomic_hash;
 	} else {
 		// privkey or extended privkey
 		key = key_material;
