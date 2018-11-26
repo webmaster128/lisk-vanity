@@ -23,7 +23,7 @@ inline uint64_t* eight_bytes_from(const uchar *data, uint offset) {
 
 __kernel void generate_pubkey(
 	__global uchar *result,
-	__global uchar *key_root,
+	__constant uchar *key_root,
 	ulong max_address_value,
 	uchar generate_key_type
 ) {
