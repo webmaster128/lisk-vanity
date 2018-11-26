@@ -25,8 +25,6 @@ use num_traits::{ToPrimitive};
 
 #[cfg(feature = "gpu")]
 extern crate ocl;
-#[cfg(feature = "gpu")]
-extern crate ocl_core;
 
 mod cpu;
 use cpu::bip39::{entropy_to_mnemonic};
