@@ -77,6 +77,7 @@ impl Gpu {
         let kernel = pro_que
             .kernel_builder("generate_pubkey")
             .global_work_size(threads)
+            .local_work_size(1)
             .arg(&result)
             .arg(&key_root)
             .arg(max_address_value)
