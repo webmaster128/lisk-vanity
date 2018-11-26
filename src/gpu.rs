@@ -47,27 +47,25 @@ impl Gpu {
         let device = Device::by_idx_wrap(platforms[platform_idx], device_idx).expect("Requested device not found");
         eprintln!("Using GPU {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
 
-        let mut pro_que = ProQue::builder()
+        let pro_que = ProQue::builder()
             .prog_bldr(prog_bldr)
             .platform(platforms[platform_idx])
             .device(DeviceSpecifier::Indices(vec![device_idx]))
-            .dims(64)
             .build()?;
 
         eprintln!("GPU program successfully compiled.");
 
-        let result = pro_que
-            .buffer_builder::<u8>()
+        let result = Buffer::<u8>::builder()
+            .queue(pro_que.queue().clone())
             .flags(MemFlags::new().write_only())
+            .len(32)
+            .fill_val(0u8)
             .build()?;
-        let key_root = pro_que
-            .buffer_builder::<u8>()
+        let key_root = Buffer::<u8>::builder()
+            .queue(pro_que.queue().clone())
             .flags(MemFlags::new().read_only().host_write_only())
+            .len(32)
             .build()?;
-        pro_que.set_dims(1);
-
-        // Set data
-        result.write(&[0u8; 32] as &[u8]).enq()?;
 
         let gen_key_type_code: u8 = match generate_key_type {
             GenerateKeyType::LiskPassphrase => 0,
