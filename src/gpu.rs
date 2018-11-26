@@ -64,11 +64,6 @@ impl Gpu {
             .buffer_builder::<u8>()
             .flags(MemFlags::new().read_only().host_write_only())
             .build()?;
-        pro_que.set_dims(32);
-        let public_offset = pro_que
-            .buffer_builder::<u8>()
-            .flags(MemFlags::new().read_only().host_write_only())
-            .build()?;
         pro_que.set_dims(1);
 
         // Set data
@@ -86,7 +81,6 @@ impl Gpu {
             .arg(&key_root)
             .arg(max_address_value)
             .arg(gen_key_type_code)
-            .arg(&public_offset)
             .build()?;
 
         Ok(Gpu {

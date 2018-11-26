@@ -25,8 +25,7 @@ __kernel void generate_pubkey(
 	__global uchar *result,
 	__global uchar *key_root,
 	ulong max_address_value,
-	uchar generate_key_type,
-	__global uchar *public_offset
+	uchar generate_key_type
 ) {
 	uint64_t const thread_id = get_global_id(0);
 	uchar key_material[32];
@@ -64,15 +63,7 @@ __kernel void generate_pubkey(
 		expand256_modm(a, key, 32);
 	}
 	ge25519_scalarmult_base_niels(&A, a);
-	if (generate_key_type == 2) {
-		uchar public_offset_copy[32];
-		for (size_t i = 0; i < 32; i++) {
-			public_offset_copy[i] = public_offset[i];
-		}
-		ge25519 ALIGN(16) public_offset_curvepoint;
-		ge25519_unpack_vartime(&public_offset_curvepoint, public_offset_copy);
-		ge25519_add(&A, &A, &public_offset_curvepoint);
-	}
+
 	uchar pubkey[32];
 	ge25519_pack(pubkey, &A);
 
