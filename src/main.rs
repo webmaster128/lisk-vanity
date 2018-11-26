@@ -184,7 +184,7 @@ fn main() {
                 .default_value("0")
                 .help("The GPU device to use"),
         ).get_matches();
-        
+
     let max_length = args
         .value_of("length")
         .unwrap()
@@ -204,7 +204,7 @@ fn main() {
     let output_progress = !args.is_present("no_progress");
     let simple_output = args.is_present("simple_output");
     let _generate_passphrase = args.is_present("generate_passphrase");
-    
+
     let gen_key_type;
     if args.is_present("generate_keypair") {
         gen_key_type = GenerateKeyType::PrivateKey;
@@ -283,28 +283,26 @@ fn main() {
         ).unwrap();
         gpu_thread = Some(thread::spawn(move || {
             let mut rng = OsRng::new().expect("Failed to get RNG for seed");
-            let mut found_private_key = [0u8; 32];
             loop {
                 rng.fill_bytes(&mut key_base);
                 let found = gpu
-                    .compute(&mut found_private_key as _, &key_base as _)
+                    .compute(&key_base as _)
                     .expect("Failed to run GPU computation");
                 if output_progress {
                     params
                         .attempts
                         .fetch_add(gpu_threads, atomic::Ordering::Relaxed);
                 }
-                if !found {
-                    continue;
-                }
-                if !check_solution(&params, found_private_key) {
-                    eprintln!(
-                        "GPU returned non-matching solution: {}",
-                        hex::encode_upper(&found_private_key)
-                    );
-                }
-                for byte in &mut found_private_key {
-                    *byte = 0;
+
+                if let Some(found_private_key) = found {
+                    if !check_solution(&params, found_private_key) {
+                        eprintln!(
+                            "GPU returned non-matching solution: {}",
+                            hex::encode_upper(&found_private_key)
+                        );
+                    }
+                } else {
+                    // just continue
                 }
             }
         }));

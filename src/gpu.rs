@@ -88,24 +88,27 @@ impl Gpu {
         })
     }
 
-    pub fn compute(&mut self, out: &mut [u8], key_root: &[u8]) -> Result<bool> {
-        self.key_root.write(key_root).enq()?;
-        debug_assert!(out.iter().all(|&b| b == 0));
+    pub fn compute(&mut self, key_root: &[u8]) -> Result<Option<[u8; 32]>> {
         debug_assert!({
             let mut result = [0u8; 32];
             self.result.read(&mut result as &mut [u8]).enq()?;
             result.iter().all(|&b| b == 0)
         });
 
+        self.key_root.write(key_root).enq()?;
         unsafe {
             self.kernel.enq()?;
         }
 
-        self.result.read(&mut *out).enq()?;
-        let success = !out.iter().all(|&b| b == 0);
-        if success {
+        let mut out = [0u8; 32];
+        self.result.read(&mut out as &mut [u8]).enq()?;
+
+        let matched = !out.iter().all(|&b| b == 0);
+        if matched {
             self.result.write(&[0u8; 32] as &[u8]).enq()?;
+            return Ok(Option::Some(out));
+        } else {
+            return Ok(Option::None);
         }
-        Ok(success)
     }
 }
