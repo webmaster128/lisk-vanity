@@ -1,6 +1,7 @@
 use ocl::{Device};
 use ocl::builders::DeviceSpecifier;
 use ocl::builders::ProgramBuilder;
+use ocl::enums::{DeviceInfo};
 use ocl::flags::MemFlags;
 use ocl::Buffer;
 use ocl::Platform;
@@ -46,6 +47,7 @@ impl Gpu {
 
         let device = Device::by_idx_wrap(platforms[platform_idx], device_idx).expect("Requested device not found");
         eprintln!("Using GPU {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
+        eprintln!("MaxWorkGroupSize {}", device.info(DeviceInfo::MaxWorkGroupSize)?);
 
         let pro_que = ProQue::builder()
             .prog_bldr(prog_bldr)
