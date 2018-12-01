@@ -27,13 +27,20 @@ __kernel void generate_pubkey(
 	ulong max_address_value,
 	uchar generate_key_type
 ) {
-	uint64_t const thread_id = get_global_id(0);
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
 		key_material[i] = key_root[i];
 	}
-	// manipulate the first 8 bytes in the right half of the data
-	*eight_bytes_from(key_material, 16) ^= thread_id;
+
+	uint64_t const thread_id = get_global_id(0);
+	key_material[16] ^= (thread_id >> (7*8)) & 0xFF;
+	key_material[17] ^= (thread_id >> (6*8)) & 0xFF;
+	key_material[18] ^= (thread_id >> (5*8)) & 0xFF;
+	key_material[19] ^= (thread_id >> (4*8)) & 0xFF;
+	key_material[20] ^= (thread_id >> (3*8)) & 0xFF;
+	key_material[21] ^= (thread_id >> (2*8)) & 0xFF;
+	key_material[22] ^= (thread_id >> (1*8)) & 0xFF;
+	key_material[23] ^= (thread_id >> (0*8)) & 0xFF;
 
 	uchar menomic_hash[32];
 	uchar *key;
