@@ -17,10 +17,6 @@ inline uint64_t pubkey_to_address(const uchar *pubkey) {
 	return out;
 }
 
-inline uint64_t* eight_bytes_from(const uchar *data, uint offset) {
-	return (uint64_t*) (data + offset);
-}
-
 __kernel void generate_pubkey(
 	__global uchar *result,
 	__constant uchar *key_root,
