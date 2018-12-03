@@ -81,13 +81,20 @@ DECLSPEC u64 rotl64_S (const u64 a, const u32 n)
   return rotate (a, (u64) n);
 }
 
-// https://github.com/hashcat/hashcat/blob/fca4f7e8a6e8d7d695a24bcd03d40cab8abb21a0/OpenCL/inc_types.cl#L1051
+// https://github.com/hashcat/hashcat/blob/v5.1.0/OpenCL/inc_types.cl#L1051
 
 DECLSPEC u32 hc_bytealign_S (const u32 a, const u32 b, const u32 c)
 {
   const u64 tmp = ((((u64) a) << 32) | ((u64) b)) >> ((c & 3) * 8);
 
   return (u32) (tmp);
+}
+
+// https://github.com/hashcat/hashcat/blob/v5.1.0/OpenCL/inc_types.cl#L1063
+
+DECLSPEC u32 hc_add3_S (const u32 a, const u32 b, const u32 c)
+{
+  return a + b + c;
 }
 
 // https://raw.githubusercontent.com/hashcat/hashcat/master/OpenCL/inc_common.cl
@@ -111,6 +118,22 @@ DECLSPEC void append_helper_1x4_S (u32 *r, const u32 v, const u32 *m)
   r[3] |= v & m[3];
 }
 
+// https://raw.githubusercontent.com/hashcat/hashcat/v5.1.0/OpenCL/inc_common.cl
+
+DECLSPEC void append_0x80_4x4_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, const u32 offset)
+{
+  u32 v[4];
+
+  set_mark_1x4_S (v, offset);
+
+  const u32 offset16 = offset / 16;
+
+  append_helper_1x4_S (w0, ((offset16 == 0) ? 0x80808080 : 0), v);
+  append_helper_1x4_S (w1, ((offset16 == 1) ? 0x80808080 : 0), v);
+  append_helper_1x4_S (w2, ((offset16 == 2) ? 0x80808080 : 0), v);
+  append_helper_1x4_S (w3, ((offset16 == 3) ? 0x80808080 : 0), v);
+}
+
 DECLSPEC void append_0x80_8x4_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, u32 *w4, u32 *w5, u32 *w6, u32 *w7, const u32 offset)
 {
   u32 v[4];
@@ -129,6 +152,1607 @@ DECLSPEC void append_0x80_8x4_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, u32 *w4, u3
   append_helper_1x4_S (w7, ((offset16 == 7) ? 0x80808080 : 0), v);
 }
 
+// https://raw.githubusercontent.com/hashcat/hashcat/v5.1.0/OpenCL/inc_common.cl
+
+DECLSPEC void switch_buffer_by_offset_be_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, const u32 offset)
+{
+  const int offset_switch = offset / 4;
+
+  #if (defined IS_AMD && AMD_GCN < 3) || defined IS_GENERIC
+  switch (offset_switch)
+  {
+    case  0:
+      w3[3] = hc_bytealign_S (w3[2], w3[3], offset);
+      w3[2] = hc_bytealign_S (w3[1], w3[2], offset);
+      w3[1] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[0] = hc_bytealign_S (w2[3], w3[0], offset);
+      w2[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      w2[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      w1[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w1[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w0[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w0[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[0] = hc_bytealign_S (    0, w0[0], offset);
+
+      break;
+
+    case  1:
+      w3[3] = hc_bytealign_S (w3[1], w3[2], offset);
+      w3[2] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[1] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[0] = hc_bytealign_S (w2[2], w2[3], offset);
+      w2[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      w1[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w0[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[1] = hc_bytealign_S (    0, w0[0], offset);
+      w0[0] = 0;
+
+      break;
+
+    case  2:
+      w3[3] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[2] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[1] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[0] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[2] = hc_bytealign_S (    0, w0[0], offset);
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  3:
+      w3[3] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[2] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[1] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[0] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[3] = hc_bytealign_S (    0, w0[0], offset);
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  4:
+      w3[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[0] = hc_bytealign_S (    0, w0[0], offset);
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  5:
+      w3[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[1] = hc_bytealign_S (    0, w0[0], offset);
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  6:
+      w3[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[2] = hc_bytealign_S (    0, w0[0], offset);
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  7:
+      w3[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[3] = hc_bytealign_S (    0, w0[0], offset);
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  8:
+      w3[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[0] = hc_bytealign_S (    0, w0[0], offset);
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  9:
+      w3[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[1] = hc_bytealign_S (    0, w0[0], offset);
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 10:
+      w3[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[2] = hc_bytealign_S (    0, w0[0], offset);
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 11:
+      w3[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[3] = hc_bytealign_S (    0, w0[0], offset);
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 12:
+      w3[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[0] = hc_bytealign_S (    0, w0[0], offset);
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 13:
+      w3[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[1] = hc_bytealign_S (    0, w0[0], offset);
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 14:
+      w3[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[2] = hc_bytealign_S (    0, w0[0], offset);
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 15:
+      w3[3] = hc_bytealign_S (    0, w0[0], offset);
+      w3[2] = 0;
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+  }
+  #endif
+
+  #if (defined IS_AMD && AMD_GCN >= 3) || defined IS_NV
+
+  #if defined IS_NV
+  const int selector = (0x76543210 >> ((offset & 3) * 4)) & 0xffff;
+  #endif
+
+  #if defined IS_AMD
+  const int selector = 0x0706050403020100 >> ((offset & 3) * 8);
+  #endif
+
+  switch (offset_switch)
+  {
+    case  0:
+      w3[3] = hc_byte_perm_S (w3[3], w3[2], selector);
+      w3[2] = hc_byte_perm_S (w3[2], w3[1], selector);
+      w3[1] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[0] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w2[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w2[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w1[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w1[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w0[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w0[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[0] = hc_byte_perm_S (w0[0],     0, selector);
+
+      break;
+
+    case  1:
+      w3[3] = hc_byte_perm_S (w3[2], w3[1], selector);
+      w3[2] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[1] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[0] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w2[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w1[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w0[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[0] = 0;
+
+      break;
+
+    case  2:
+      w3[3] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[2] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[1] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[0] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  3:
+      w3[3] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[2] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[1] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[0] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  4:
+      w3[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  5:
+      w3[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  6:
+      w3[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  7:
+      w3[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  8:
+      w3[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  9:
+      w3[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 10:
+      w3[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 11:
+      w3[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 12:
+      w3[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 13:
+      w3[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 14:
+      w3[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 15:
+      w3[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[2] = 0;
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+  }
+  #endif
+}
+
+DECLSPEC void switch_buffer_by_offset_carry_be_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, u32 *c0, u32 *c1, u32 *c2, u32 *c3, const u32 offset)
+{
+  const int offset_switch = offset / 4;
+
+  #if (defined IS_AMD && AMD_GCN < 3) || defined IS_GENERIC
+  switch (offset_switch)
+  {
+    case  0:
+      c0[0] = hc_bytealign_S (w3[3],     0, offset);
+      w3[3] = hc_bytealign_S (w3[2], w3[3], offset);
+      w3[2] = hc_bytealign_S (w3[1], w3[2], offset);
+      w3[1] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[0] = hc_bytealign_S (w2[3], w3[0], offset);
+      w2[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      w2[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      w1[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w1[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w0[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w0[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[0] = hc_bytealign_S (    0, w0[0], offset);
+
+      break;
+
+    case  1:
+      c0[1] = hc_bytealign_S (w3[3],     0, offset);
+      c0[0] = hc_bytealign_S (w3[2], w3[3], offset);
+      w3[3] = hc_bytealign_S (w3[1], w3[2], offset);
+      w3[2] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[1] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[0] = hc_bytealign_S (w2[2], w2[3], offset);
+      w2[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      w1[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w0[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[1] = hc_bytealign_S (    0, w0[0], offset);
+      w0[0] = 0;
+
+      break;
+
+    case  2:
+      c0[2] = hc_bytealign_S (w3[3],     0, offset);
+      c0[1] = hc_bytealign_S (w3[2], w3[3], offset);
+      c0[0] = hc_bytealign_S (w3[1], w3[2], offset);
+      w3[3] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[2] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[1] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[0] = hc_bytealign_S (w2[1], w2[2], offset);
+      w2[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      w1[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w0[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[2] = hc_bytealign_S (    0, w0[0], offset);
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  3:
+      c0[3] = hc_bytealign_S (w3[3],     0, offset);
+      c0[2] = hc_bytealign_S (w3[2], w3[3], offset);
+      c0[1] = hc_bytealign_S (w3[1], w3[2], offset);
+      c0[0] = hc_bytealign_S (w3[0], w3[1], offset);
+      w3[3] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[2] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[1] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[0] = hc_bytealign_S (w2[0], w2[1], offset);
+      w2[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      w1[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w0[3] = hc_bytealign_S (    0, w0[0], offset);
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  4:
+      c1[0] = hc_bytealign_S (w3[3],     0, offset);
+      c0[3] = hc_bytealign_S (w3[2], w3[3], offset);
+      c0[2] = hc_bytealign_S (w3[1], w3[2], offset);
+      c0[1] = hc_bytealign_S (w3[0], w3[1], offset);
+      c0[0] = hc_bytealign_S (w2[3], w3[0], offset);
+      w3[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      w2[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w1[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[0] = hc_bytealign_S (    0, w0[0], offset);
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  5:
+      c1[1] = hc_bytealign_S (w3[3],     0, offset);
+      c1[0] = hc_bytealign_S (w3[2], w3[3], offset);
+      c0[3] = hc_bytealign_S (w3[1], w3[2], offset);
+      c0[2] = hc_bytealign_S (w3[0], w3[1], offset);
+      c0[1] = hc_bytealign_S (w2[3], w3[0], offset);
+      c0[0] = hc_bytealign_S (w2[2], w2[3], offset);
+      w3[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      w2[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w1[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[1] = hc_bytealign_S (    0, w0[0], offset);
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  6:
+      c1[2] = hc_bytealign_S (w3[3],     0, offset);
+      c1[1] = hc_bytealign_S (w3[2], w3[3], offset);
+      c1[0] = hc_bytealign_S (w3[1], w3[2], offset);
+      c0[3] = hc_bytealign_S (w3[0], w3[1], offset);
+      c0[2] = hc_bytealign_S (w2[3], w3[0], offset);
+      c0[1] = hc_bytealign_S (w2[2], w2[3], offset);
+      c0[0] = hc_bytealign_S (w2[1], w2[2], offset);
+      w3[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      w2[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w1[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[2] = hc_bytealign_S (    0, w0[0], offset);
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  7:
+      c1[3] = hc_bytealign_S (w3[3],     0, offset);
+      c1[2] = hc_bytealign_S (w3[2], w3[3], offset);
+      c1[1] = hc_bytealign_S (w3[1], w3[2], offset);
+      c1[0] = hc_bytealign_S (w3[0], w3[1], offset);
+      c0[3] = hc_bytealign_S (w2[3], w3[0], offset);
+      c0[2] = hc_bytealign_S (w2[2], w2[3], offset);
+      c0[1] = hc_bytealign_S (w2[1], w2[2], offset);
+      c0[0] = hc_bytealign_S (w2[0], w2[1], offset);
+      w3[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      w2[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w1[3] = hc_bytealign_S (    0, w0[0], offset);
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  8:
+      c2[0] = hc_bytealign_S (w3[3],     0, offset);
+      c1[3] = hc_bytealign_S (w3[2], w3[3], offset);
+      c1[2] = hc_bytealign_S (w3[1], w3[2], offset);
+      c1[1] = hc_bytealign_S (w3[0], w3[1], offset);
+      c1[0] = hc_bytealign_S (w2[3], w3[0], offset);
+      c0[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      c0[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      c0[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      c0[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      w3[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w2[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[0] = hc_bytealign_S (    0, w0[0], offset);
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  9:
+      c2[1] = hc_bytealign_S (w3[3],     0, offset);
+      c2[0] = hc_bytealign_S (w3[2], w3[3], offset);
+      c1[3] = hc_bytealign_S (w3[1], w3[2], offset);
+      c1[2] = hc_bytealign_S (w3[0], w3[1], offset);
+      c1[1] = hc_bytealign_S (w2[3], w3[0], offset);
+      c1[0] = hc_bytealign_S (w2[2], w2[3], offset);
+      c0[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      c0[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      c0[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      c0[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      w3[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w2[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[1] = hc_bytealign_S (    0, w0[0], offset);
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 10:
+      c2[2] = hc_bytealign_S (w3[3],     0, offset);
+      c2[1] = hc_bytealign_S (w3[2], w3[3], offset);
+      c2[0] = hc_bytealign_S (w3[1], w3[2], offset);
+      c1[3] = hc_bytealign_S (w3[0], w3[1], offset);
+      c1[2] = hc_bytealign_S (w2[3], w3[0], offset);
+      c1[1] = hc_bytealign_S (w2[2], w2[3], offset);
+      c1[0] = hc_bytealign_S (w2[1], w2[2], offset);
+      c0[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      c0[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      c0[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      c0[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      w3[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w2[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[2] = hc_bytealign_S (    0, w0[0], offset);
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 11:
+      c2[3] = hc_bytealign_S (w3[3],     0, offset);
+      c2[2] = hc_bytealign_S (w3[2], w3[3], offset);
+      c2[1] = hc_bytealign_S (w3[1], w3[2], offset);
+      c2[0] = hc_bytealign_S (w3[0], w3[1], offset);
+      c1[3] = hc_bytealign_S (w2[3], w3[0], offset);
+      c1[2] = hc_bytealign_S (w2[2], w2[3], offset);
+      c1[1] = hc_bytealign_S (w2[1], w2[2], offset);
+      c1[0] = hc_bytealign_S (w2[0], w2[1], offset);
+      c0[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      c0[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      c0[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      c0[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      w3[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w2[3] = hc_bytealign_S (    0, w0[0], offset);
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 12:
+      c3[0] = hc_bytealign_S (w3[3],     0, offset);
+      c2[3] = hc_bytealign_S (w3[2], w3[3], offset);
+      c2[2] = hc_bytealign_S (w3[1], w3[2], offset);
+      c2[1] = hc_bytealign_S (w3[0], w3[1], offset);
+      c2[0] = hc_bytealign_S (w2[3], w3[0], offset);
+      c1[3] = hc_bytealign_S (w2[2], w2[3], offset);
+      c1[2] = hc_bytealign_S (w2[1], w2[2], offset);
+      c1[1] = hc_bytealign_S (w2[0], w2[1], offset);
+      c1[0] = hc_bytealign_S (w1[3], w2[0], offset);
+      c0[3] = hc_bytealign_S (w1[2], w1[3], offset);
+      c0[2] = hc_bytealign_S (w1[1], w1[2], offset);
+      c0[1] = hc_bytealign_S (w1[0], w1[1], offset);
+      c0[0] = hc_bytealign_S (w0[3], w1[0], offset);
+      w3[3] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[2] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[1] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[0] = hc_bytealign_S (    0, w0[0], offset);
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 13:
+      c3[1] = hc_bytealign_S (w3[3],     0, offset);
+      c3[0] = hc_bytealign_S (w3[2], w3[3], offset);
+      c2[3] = hc_bytealign_S (w3[1], w3[2], offset);
+      c2[2] = hc_bytealign_S (w3[0], w3[1], offset);
+      c2[1] = hc_bytealign_S (w2[3], w3[0], offset);
+      c2[0] = hc_bytealign_S (w2[2], w2[3], offset);
+      c1[3] = hc_bytealign_S (w2[1], w2[2], offset);
+      c1[2] = hc_bytealign_S (w2[0], w2[1], offset);
+      c1[1] = hc_bytealign_S (w1[3], w2[0], offset);
+      c1[0] = hc_bytealign_S (w1[2], w1[3], offset);
+      c0[3] = hc_bytealign_S (w1[1], w1[2], offset);
+      c0[2] = hc_bytealign_S (w1[0], w1[1], offset);
+      c0[1] = hc_bytealign_S (w0[3], w1[0], offset);
+      c0[0] = hc_bytealign_S (w0[2], w0[3], offset);
+      w3[3] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[2] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[1] = hc_bytealign_S (    0, w0[0], offset);
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 14:
+      c3[2] = hc_bytealign_S (w3[3],     0, offset);
+      c3[1] = hc_bytealign_S (w3[2], w3[3], offset);
+      c3[0] = hc_bytealign_S (w3[1], w3[2], offset);
+      c2[3] = hc_bytealign_S (w3[0], w3[1], offset);
+      c2[2] = hc_bytealign_S (w2[3], w3[0], offset);
+      c2[1] = hc_bytealign_S (w2[2], w2[3], offset);
+      c2[0] = hc_bytealign_S (w2[1], w2[2], offset);
+      c1[3] = hc_bytealign_S (w2[0], w2[1], offset);
+      c1[2] = hc_bytealign_S (w1[3], w2[0], offset);
+      c1[1] = hc_bytealign_S (w1[2], w1[3], offset);
+      c1[0] = hc_bytealign_S (w1[1], w1[2], offset);
+      c0[3] = hc_bytealign_S (w1[0], w1[1], offset);
+      c0[2] = hc_bytealign_S (w0[3], w1[0], offset);
+      c0[1] = hc_bytealign_S (w0[2], w0[3], offset);
+      c0[0] = hc_bytealign_S (w0[1], w0[2], offset);
+      w3[3] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[2] = hc_bytealign_S (    0, w0[0], offset);
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 15:
+      c3[3] = hc_bytealign_S (w3[3],     0, offset);
+      c3[2] = hc_bytealign_S (w3[2], w3[3], offset);
+      c3[1] = hc_bytealign_S (w3[1], w3[2], offset);
+      c3[0] = hc_bytealign_S (w3[0], w3[1], offset);
+      c2[3] = hc_bytealign_S (w2[3], w3[0], offset);
+      c2[2] = hc_bytealign_S (w2[2], w2[3], offset);
+      c2[1] = hc_bytealign_S (w2[1], w2[2], offset);
+      c2[0] = hc_bytealign_S (w2[0], w2[1], offset);
+      c1[3] = hc_bytealign_S (w1[3], w2[0], offset);
+      c1[2] = hc_bytealign_S (w1[2], w1[3], offset);
+      c1[1] = hc_bytealign_S (w1[1], w1[2], offset);
+      c1[0] = hc_bytealign_S (w1[0], w1[1], offset);
+      c0[3] = hc_bytealign_S (w0[3], w1[0], offset);
+      c0[2] = hc_bytealign_S (w0[2], w0[3], offset);
+      c0[1] = hc_bytealign_S (w0[1], w0[2], offset);
+      c0[0] = hc_bytealign_S (w0[0], w0[1], offset);
+      w3[3] = hc_bytealign_S (    0, w0[0], offset);
+      w3[2] = 0;
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+  }
+  #endif
+
+  #if (defined IS_AMD && AMD_GCN >= 3) || defined IS_NV
+
+  #if defined IS_NV
+  const int selector = (0x76543210 >> ((offset & 3) * 4)) & 0xffff;
+  #endif
+
+  #if defined IS_AMD
+  const int selector = 0x0706050403020100 >> ((offset & 3) * 8);
+  #endif
+
+  switch (offset_switch)
+  {
+    case  0:
+      c0[0] = hc_byte_perm_S (    0, w3[3], selector);
+      w3[3] = hc_byte_perm_S (w3[3], w3[2], selector);
+      w3[2] = hc_byte_perm_S (w3[2], w3[1], selector);
+      w3[1] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[0] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w2[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w2[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w1[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w1[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w0[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w0[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[0] = hc_byte_perm_S (w0[0],     0, selector);
+
+      break;
+
+    case  1:
+      c0[1] = hc_byte_perm_S (    0, w3[3], selector);
+      c0[0] = hc_byte_perm_S (w3[3], w3[2], selector);
+      w3[3] = hc_byte_perm_S (w3[2], w3[1], selector);
+      w3[2] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[1] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[0] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w2[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w1[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w0[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[0] = 0;
+
+      break;
+
+    case  2:
+      c0[2] = hc_byte_perm_S (    0, w3[3], selector);
+      c0[1] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c0[0] = hc_byte_perm_S (w3[2], w3[1], selector);
+      w3[3] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[2] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[1] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[0] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w2[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w1[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w0[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  3:
+      c0[3] = hc_byte_perm_S (    0, w3[3], selector);
+      c0[2] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c0[1] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c0[0] = hc_byte_perm_S (w3[1], w3[0], selector);
+      w3[3] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[2] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[1] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[0] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w2[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w1[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w0[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  4:
+      c1[0] = hc_byte_perm_S (    0, w3[3], selector);
+      c0[3] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c0[2] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c0[1] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c0[0] = hc_byte_perm_S (w3[0], w2[3], selector);
+      w3[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w2[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w1[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  5:
+      c1[1] = hc_byte_perm_S (    0, w3[3], selector);
+      c1[0] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c0[3] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c0[2] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c0[1] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c0[0] = hc_byte_perm_S (w2[3], w2[2], selector);
+      w3[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w2[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w1[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  6:
+      c1[2] = hc_byte_perm_S (    0, w3[3], selector);
+      c1[1] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c1[0] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c0[3] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c0[2] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c0[1] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c0[0] = hc_byte_perm_S (w2[2], w2[1], selector);
+      w3[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w2[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w1[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  7:
+      c1[3] = hc_byte_perm_S (    0, w3[3], selector);
+      c1[2] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c1[1] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c1[0] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c0[3] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c0[2] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c0[1] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c0[0] = hc_byte_perm_S (w2[1], w2[0], selector);
+      w3[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w2[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w1[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  8:
+      c2[0] = hc_byte_perm_S (    0, w3[3], selector);
+      c1[3] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c1[2] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c1[1] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c1[0] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c0[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c0[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c0[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c0[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      w3[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w2[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case  9:
+      c2[1] = hc_byte_perm_S (    0, w3[3], selector);
+      c2[0] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c1[3] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c1[2] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c1[1] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c1[0] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c0[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c0[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c0[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c0[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      w3[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w2[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 10:
+      c2[2] = hc_byte_perm_S (    0, w3[3], selector);
+      c2[1] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c2[0] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c1[3] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c1[2] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c1[1] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c1[0] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c0[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c0[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c0[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c0[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      w3[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w2[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 11:
+      c2[3] = hc_byte_perm_S (    0, w3[3], selector);
+      c2[2] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c2[1] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c2[0] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c1[3] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c1[2] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c1[1] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c1[0] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c0[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c0[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c0[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      c0[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      w3[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w2[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 12:
+      c3[0] = hc_byte_perm_S (    0, w3[3], selector);
+      c2[3] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c2[2] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c2[1] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c2[0] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c1[3] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c1[2] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c1[1] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c1[0] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c0[3] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c0[2] = hc_byte_perm_S (w1[2], w1[1], selector);
+      c0[1] = hc_byte_perm_S (w1[1], w1[0], selector);
+      c0[0] = hc_byte_perm_S (w1[0], w0[3], selector);
+      w3[3] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[2] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[1] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[0] = hc_byte_perm_S (w0[0],     0, selector);
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 13:
+      c3[1] = hc_byte_perm_S (    0, w3[3], selector);
+      c3[0] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c2[3] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c2[2] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c2[1] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c2[0] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c1[3] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c1[2] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c1[1] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c1[0] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c0[3] = hc_byte_perm_S (w1[2], w1[1], selector);
+      c0[2] = hc_byte_perm_S (w1[1], w1[0], selector);
+      c0[1] = hc_byte_perm_S (w1[0], w0[3], selector);
+      c0[0] = hc_byte_perm_S (w0[3], w0[2], selector);
+      w3[3] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[2] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[1] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 14:
+      c3[2] = hc_byte_perm_S (    0, w3[3], selector);
+      c3[1] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c3[0] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c2[3] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c2[2] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c2[1] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c2[0] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c1[3] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c1[2] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c1[1] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c1[0] = hc_byte_perm_S (w1[2], w1[1], selector);
+      c0[3] = hc_byte_perm_S (w1[1], w1[0], selector);
+      c0[2] = hc_byte_perm_S (w1[0], w0[3], selector);
+      c0[1] = hc_byte_perm_S (w0[3], w0[2], selector);
+      c0[0] = hc_byte_perm_S (w0[2], w0[1], selector);
+      w3[3] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[2] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+
+    case 15:
+      c3[3] = hc_byte_perm_S (    0, w3[3], selector);
+      c3[2] = hc_byte_perm_S (w3[3], w3[2], selector);
+      c3[1] = hc_byte_perm_S (w3[2], w3[1], selector);
+      c3[0] = hc_byte_perm_S (w3[1], w3[0], selector);
+      c2[3] = hc_byte_perm_S (w3[0], w2[3], selector);
+      c2[2] = hc_byte_perm_S (w2[3], w2[2], selector);
+      c2[1] = hc_byte_perm_S (w2[2], w2[1], selector);
+      c2[0] = hc_byte_perm_S (w2[1], w2[0], selector);
+      c1[3] = hc_byte_perm_S (w2[0], w1[3], selector);
+      c1[2] = hc_byte_perm_S (w1[3], w1[2], selector);
+      c1[1] = hc_byte_perm_S (w1[2], w1[1], selector);
+      c1[0] = hc_byte_perm_S (w1[1], w1[0], selector);
+      c0[3] = hc_byte_perm_S (w1[0], w0[3], selector);
+      c0[2] = hc_byte_perm_S (w0[3], w0[2], selector);
+      c0[1] = hc_byte_perm_S (w0[2], w0[1], selector);
+      c0[0] = hc_byte_perm_S (w0[1], w0[0], selector);
+      w3[3] = hc_byte_perm_S (w0[0],     0, selector);
+      w3[2] = 0;
+      w3[1] = 0;
+      w3[0] = 0;
+      w2[3] = 0;
+      w2[2] = 0;
+      w2[1] = 0;
+      w2[0] = 0;
+      w1[3] = 0;
+      w1[2] = 0;
+      w1[1] = 0;
+      w1[0] = 0;
+      w0[3] = 0;
+      w0[2] = 0;
+      w0[1] = 0;
+      w0[0] = 0;
+
+      break;
+  }
+  #endif
+}
 
 DECLSPEC void switch_buffer_by_offset_8x4_be_S (u32 *w0, u32 *w1, u32 *w2, u32 *w3, u32 *w4, u32 *w5, u32 *w6, u32 *w7, const u32 offset)
 {
