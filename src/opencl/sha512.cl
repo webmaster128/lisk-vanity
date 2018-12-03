@@ -1,9 +1,3 @@
-
-// important notes on this:
-// input buf unused bytes needs to be set to zero
-// input buf needs to be in algorithm native byte order (md5 = LE, sha1 = BE, etc)
-// input buf needs to be 128 byte aligned when using sha512_update()
-
 #define SHIFT_RIGHT_64(x,n) ((x) >> (n))
 
 #define SHA512_S0_S(x) (rotr64_S ((x), 28) ^ rotr64_S ((x), 34) ^ rotr64_S ((x), 39))
@@ -153,6 +147,12 @@ typedef enum sha2_64_constants
   SHA512C4f=0x6c44198c4a475817
 
 } sha2_64_constants_t;
+
+
+// important notes on this:
+// input buf unused bytes needs to be set to zero
+// input buf needs to be in algorithm native byte order (md5 = LE, sha1 = BE, etc)
+// input buf needs to be 128 byte aligned when using sha512_update()
 
 __constant u64a k_sha512[80] =
 {
