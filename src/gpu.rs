@@ -59,13 +59,13 @@ impl Gpu {
             .build()?;
         eprintln!("GPU context created.");
 
+        let queue = Queue::new(&context, device, None)?;
+        eprintln!("GPU queue created.");
+
         let program = program_builder
             .devices(device)
             .build(&context)?;
         eprintln!("GPU program successfully compiled.");
-
-        let queue = Queue::new(&context, device, None)?;
-        eprintln!("GPU queue created.");
 
         let result = Buffer::<u8>::builder()
             .queue(queue.clone())
