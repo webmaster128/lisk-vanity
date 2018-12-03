@@ -41,7 +41,7 @@ inline u32 read_four_bytes(const uchar *start) {
         | (((u32) start[3]) << 0*8);
 }
 
-inline void to_32bytes_sha512_input(u32 out[8], const uchar in[32]) {
+inline void to_32bytes_sha512_input(u32 *out, const uchar *in) {
 	out[0] = read_four_bytes(in +  0);
 	out[1] = read_four_bytes(in +  4);
 	out[2] = read_four_bytes(in +  8);
@@ -52,7 +52,7 @@ inline void to_32bytes_sha512_input(u32 out[8], const uchar in[32]) {
 	out[7] = read_four_bytes(in + 28);
 }
 
-inline void from_sha512_result(uchar *out, const u64 in[8]) {
+inline void from_sha512_result(uchar *out, const u64 *in) {
 	out[ 0] = (h32_from_64_S (in[0]) >> (3*8)) & 0xff;
 	out[ 1] = (h32_from_64_S (in[0]) >> (2*8)) & 0xff;
 	out[ 2] = (h32_from_64_S (in[0]) >> (1*8)) & 0xff;
