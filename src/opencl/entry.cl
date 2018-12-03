@@ -161,7 +161,7 @@ __kernel void generate_pubkey(
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {
 		uchar in_data[32] = {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-		u32 in[8];
+		u32 in[32] = { 0 };
 		uchar hash[64];
 
 		sha512_ctx_t hasher;
@@ -175,6 +175,7 @@ __kernel void generate_pubkey(
 		sha512_final (&hasher);
 		from_sha512_result(hash, hasher.h);
 
+		printf("(%i) ", hasher.len);
 		print_bytes(hash, 64);
 
 		// hash[0] &= 248;
