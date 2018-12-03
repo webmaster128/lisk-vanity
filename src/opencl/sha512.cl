@@ -1,5 +1,19 @@
-#define SHIFT_RIGHT_64(x,n) ((x) >> (n))
+/*
+(
+    echo "// Snippet from inc_hash_functions.cl"
+    curl -sS https://raw.githubusercontent.com/hashcat/hashcat/master/OpenCL/inc_hash_functions.cl \
+        | awk 'BEGIN{ good=0}  /define SHA512_S0_S/{good=2}  /ifdef IS_NV/{good-=1}  {if (good > 0) print }'
 
+    echo "// Snippet from inc_hash_constants.h"
+    curl -sS https://raw.githubusercontent.com/hashcat/hashcat/master/OpenCL/inc_hash_constants.h \
+        | awk 'BEGIN{ good=0}  /typedef enum sha2_64_constants/{good=1}  /typedef enum ripemd160_constants/{good=0}  {if (good) print }'
+
+    echo "// Snippet from inc_hash_sha512.cl"
+    curl -sS https://raw.githubusercontent.com/hashcat/hashcat/master/OpenCL/inc_hash_sha512.cl \
+        | awk 'BEGIN{ before_border=1} /\/\/ sha512_hmac/{before_border=0}  {if (before_border) print }'
+) >> sha512.cl
+*/
+// Snippet from inc_hash_functions.cl
 #define SHA512_S0_S(x) (rotr64_S ((x), 28) ^ rotr64_S ((x), 34) ^ rotr64_S ((x), 39))
 #define SHA512_S1_S(x) (rotr64_S ((x), 14) ^ rotr64_S ((x), 18) ^ rotr64_S ((x), 41))
 #define SHA512_S2_S(x) (rotr64_S ((x),  1) ^ rotr64_S ((x),  8) ^ SHIFT_RIGHT_64 ((x), 7))
@@ -13,8 +27,20 @@
 #define SHA512_F0(x,y,z) ((z) ^ ((x) & ((y) ^ (z))))
 #define SHA512_F1(x,y,z) (((x) & (y)) | ((z) & ((x) ^ (y))))
 
+#ifdef IS_NV
+#define SHA512_F0o(x,y,z) (bitselect ((z), (y), (x)))
+#define SHA512_F1o(x,y,z) (bitselect ((x), (y), ((x) ^ (z))))
+#endif
+
+#ifdef IS_AMD
+#define SHA512_F0o(x,y,z) (bitselect ((z), (y), (x)))
+#define SHA512_F1o(x,y,z) (bitselect ((x), (y), ((x) ^ (z))))
+#endif
+
+#ifdef IS_GENERIC
 #define SHA512_F0o(x,y,z) (SHA512_F0 ((x), (y), (z)))
 #define SHA512_F1o(x,y,z) (SHA512_F1 ((x), (y), (z)))
+#endif
 
 #define SHA512_STEP_S(F0,F1,a,b,c,d,e,f,g,h,x,K)  \
 {                                                 \
@@ -42,6 +68,7 @@
 
 #define SHA512_EXPAND(x,y,z,w) (SHA512_S3 (x) + y + SHA512_S2 (z) + w)
 
+// Snippet from inc_hash_constants.h
 typedef enum sha2_64_constants
 {
   // SHA-384 Initial Hash Values
@@ -148,6 +175,7 @@ typedef enum sha2_64_constants
 
 } sha2_64_constants_t;
 
+// Snippet from inc_hash_sha512.cl
 
 // important notes on this:
 // input buf unused bytes needs to be set to zero
@@ -701,6 +729,204 @@ DECLSPEC void sha512_update_swap (sha512_ctx_t *ctx, const u32 *w, const int len
   sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, len - pos1);
 }
 
+DECLSPEC void sha512_update_utf16le (sha512_ctx_t *ctx, const u32 *w, const int len)
+{
+  u32 w0[4];
+  u32 w1[4];
+  u32 w2[4];
+  u32 w3[4];
+  u32 w4[4];
+  u32 w5[4];
+  u32 w6[4];
+  u32 w7[4];
+
+  int pos1;
+  int pos4;
+
+  for (pos1 = 0, pos4 = 0; pos1 < len - 64; pos1 += 64, pos4 += 16)
+  {
+    w0[0] = w[pos4 +  0];
+    w0[1] = w[pos4 +  1];
+    w0[2] = w[pos4 +  2];
+    w0[3] = w[pos4 +  3];
+    w1[0] = w[pos4 +  4];
+    w1[1] = w[pos4 +  5];
+    w1[2] = w[pos4 +  6];
+    w1[3] = w[pos4 +  7];
+    w2[0] = w[pos4 +  8];
+    w2[1] = w[pos4 +  9];
+    w2[2] = w[pos4 + 10];
+    w2[3] = w[pos4 + 11];
+    w3[0] = w[pos4 + 12];
+    w3[1] = w[pos4 + 13];
+    w3[2] = w[pos4 + 14];
+    w3[3] = w[pos4 + 15];
+
+    make_utf16le_S (w3, w6, w7);
+    make_utf16le_S (w2, w4, w5);
+    make_utf16le_S (w1, w2, w3);
+    make_utf16le_S (w0, w0, w1);
+
+    sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, 64 * 2);
+  }
+
+  w0[0] = w[pos4 +  0];
+  w0[1] = w[pos4 +  1];
+  w0[2] = w[pos4 +  2];
+  w0[3] = w[pos4 +  3];
+  w1[0] = w[pos4 +  4];
+  w1[1] = w[pos4 +  5];
+  w1[2] = w[pos4 +  6];
+  w1[3] = w[pos4 +  7];
+  w2[0] = w[pos4 +  8];
+  w2[1] = w[pos4 +  9];
+  w2[2] = w[pos4 + 10];
+  w2[3] = w[pos4 + 11];
+  w3[0] = w[pos4 + 12];
+  w3[1] = w[pos4 + 13];
+  w3[2] = w[pos4 + 14];
+  w3[3] = w[pos4 + 15];
+
+  make_utf16le_S (w3, w6, w7);
+  make_utf16le_S (w2, w4, w5);
+  make_utf16le_S (w1, w2, w3);
+  make_utf16le_S (w0, w0, w1);
+
+  sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, (len - pos1) * 2);
+}
+
+DECLSPEC void sha512_update_utf16le_swap (sha512_ctx_t *ctx, const u32 *w, const int len)
+{
+  u32 w0[4];
+  u32 w1[4];
+  u32 w2[4];
+  u32 w3[4];
+  u32 w4[4];
+  u32 w5[4];
+  u32 w6[4];
+  u32 w7[4];
+
+  int pos1;
+  int pos4;
+
+  for (pos1 = 0, pos4 = 0; pos1 < len - 64; pos1 += 64, pos4 += 16)
+  {
+    w0[0] = w[pos4 +  0];
+    w0[1] = w[pos4 +  1];
+    w0[2] = w[pos4 +  2];
+    w0[3] = w[pos4 +  3];
+    w1[0] = w[pos4 +  4];
+    w1[1] = w[pos4 +  5];
+    w1[2] = w[pos4 +  6];
+    w1[3] = w[pos4 +  7];
+    w2[0] = w[pos4 +  8];
+    w2[1] = w[pos4 +  9];
+    w2[2] = w[pos4 + 10];
+    w2[3] = w[pos4 + 11];
+    w3[0] = w[pos4 + 12];
+    w3[1] = w[pos4 + 13];
+    w3[2] = w[pos4 + 14];
+    w3[3] = w[pos4 + 15];
+
+    make_utf16le_S (w3, w6, w7);
+    make_utf16le_S (w2, w4, w5);
+    make_utf16le_S (w1, w2, w3);
+    make_utf16le_S (w0, w0, w1);
+
+    w0[0] = swap32_S (w0[0]);
+    w0[1] = swap32_S (w0[1]);
+    w0[2] = swap32_S (w0[2]);
+    w0[3] = swap32_S (w0[3]);
+    w1[0] = swap32_S (w1[0]);
+    w1[1] = swap32_S (w1[1]);
+    w1[2] = swap32_S (w1[2]);
+    w1[3] = swap32_S (w1[3]);
+    w2[0] = swap32_S (w2[0]);
+    w2[1] = swap32_S (w2[1]);
+    w2[2] = swap32_S (w2[2]);
+    w2[3] = swap32_S (w2[3]);
+    w3[0] = swap32_S (w3[0]);
+    w3[1] = swap32_S (w3[1]);
+    w3[2] = swap32_S (w3[2]);
+    w3[3] = swap32_S (w3[3]);
+    w4[0] = swap32_S (w4[0]);
+    w4[1] = swap32_S (w4[1]);
+    w4[2] = swap32_S (w4[2]);
+    w4[3] = swap32_S (w4[3]);
+    w5[0] = swap32_S (w5[0]);
+    w5[1] = swap32_S (w5[1]);
+    w5[2] = swap32_S (w5[2]);
+    w5[3] = swap32_S (w5[3]);
+    w6[0] = swap32_S (w6[0]);
+    w6[1] = swap32_S (w6[1]);
+    w6[2] = swap32_S (w6[2]);
+    w6[3] = swap32_S (w6[3]);
+    w7[0] = swap32_S (w7[0]);
+    w7[1] = swap32_S (w7[1]);
+    w7[2] = swap32_S (w7[2]);
+    w7[3] = swap32_S (w7[3]);
+
+    sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, 64 * 2);
+  }
+
+  w0[0] = w[pos4 +  0];
+  w0[1] = w[pos4 +  1];
+  w0[2] = w[pos4 +  2];
+  w0[3] = w[pos4 +  3];
+  w1[0] = w[pos4 +  4];
+  w1[1] = w[pos4 +  5];
+  w1[2] = w[pos4 +  6];
+  w1[3] = w[pos4 +  7];
+  w2[0] = w[pos4 +  8];
+  w2[1] = w[pos4 +  9];
+  w2[2] = w[pos4 + 10];
+  w2[3] = w[pos4 + 11];
+  w3[0] = w[pos4 + 12];
+  w3[1] = w[pos4 + 13];
+  w3[2] = w[pos4 + 14];
+  w3[3] = w[pos4 + 15];
+
+  make_utf16le_S (w3, w6, w7);
+  make_utf16le_S (w2, w4, w5);
+  make_utf16le_S (w1, w2, w3);
+  make_utf16le_S (w0, w0, w1);
+
+  w0[0] = swap32_S (w0[0]);
+  w0[1] = swap32_S (w0[1]);
+  w0[2] = swap32_S (w0[2]);
+  w0[3] = swap32_S (w0[3]);
+  w1[0] = swap32_S (w1[0]);
+  w1[1] = swap32_S (w1[1]);
+  w1[2] = swap32_S (w1[2]);
+  w1[3] = swap32_S (w1[3]);
+  w2[0] = swap32_S (w2[0]);
+  w2[1] = swap32_S (w2[1]);
+  w2[2] = swap32_S (w2[2]);
+  w2[3] = swap32_S (w2[3]);
+  w3[0] = swap32_S (w3[0]);
+  w3[1] = swap32_S (w3[1]);
+  w3[2] = swap32_S (w3[2]);
+  w3[3] = swap32_S (w3[3]);
+  w4[0] = swap32_S (w4[0]);
+  w4[1] = swap32_S (w4[1]);
+  w4[2] = swap32_S (w4[2]);
+  w4[3] = swap32_S (w4[3]);
+  w5[0] = swap32_S (w5[0]);
+  w5[1] = swap32_S (w5[1]);
+  w5[2] = swap32_S (w5[2]);
+  w5[3] = swap32_S (w5[3]);
+  w6[0] = swap32_S (w6[0]);
+  w6[1] = swap32_S (w6[1]);
+  w6[2] = swap32_S (w6[2]);
+  w6[3] = swap32_S (w6[3]);
+  w7[0] = swap32_S (w7[0]);
+  w7[1] = swap32_S (w7[1]);
+  w7[2] = swap32_S (w7[2]);
+  w7[3] = swap32_S (w7[3]);
+
+  sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, (len - pos1) * 2);
+}
+
 DECLSPEC void sha512_update_global (sha512_ctx_t *ctx, const __global u32 *w, const int len)
 {
   u32 w0[4];
@@ -941,6 +1167,204 @@ DECLSPEC void sha512_update_global_swap (sha512_ctx_t *ctx, const __global u32 *
   w7[3] = swap32_S (w7[3]);
 
   sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, len - pos1);
+}
+
+DECLSPEC void sha512_update_global_utf16le (sha512_ctx_t *ctx, const __global u32 *w, const int len)
+{
+  u32 w0[4];
+  u32 w1[4];
+  u32 w2[4];
+  u32 w3[4];
+  u32 w4[4];
+  u32 w5[4];
+  u32 w6[4];
+  u32 w7[4];
+
+  int pos1;
+  int pos4;
+
+  for (pos1 = 0, pos4 = 0; pos1 < len - 64; pos1 += 64, pos4 += 16)
+  {
+    w0[0] = w[pos4 +  0];
+    w0[1] = w[pos4 +  1];
+    w0[2] = w[pos4 +  2];
+    w0[3] = w[pos4 +  3];
+    w1[0] = w[pos4 +  4];
+    w1[1] = w[pos4 +  5];
+    w1[2] = w[pos4 +  6];
+    w1[3] = w[pos4 +  7];
+    w2[0] = w[pos4 +  8];
+    w2[1] = w[pos4 +  9];
+    w2[2] = w[pos4 + 10];
+    w2[3] = w[pos4 + 11];
+    w3[0] = w[pos4 + 12];
+    w3[1] = w[pos4 + 13];
+    w3[2] = w[pos4 + 14];
+    w3[3] = w[pos4 + 15];
+
+    make_utf16le_S (w3, w6, w7);
+    make_utf16le_S (w2, w4, w5);
+    make_utf16le_S (w1, w2, w3);
+    make_utf16le_S (w0, w0, w1);
+
+    sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, 64 * 2);
+  }
+
+  w0[0] = w[pos4 +  0];
+  w0[1] = w[pos4 +  1];
+  w0[2] = w[pos4 +  2];
+  w0[3] = w[pos4 +  3];
+  w1[0] = w[pos4 +  4];
+  w1[1] = w[pos4 +  5];
+  w1[2] = w[pos4 +  6];
+  w1[3] = w[pos4 +  7];
+  w2[0] = w[pos4 +  8];
+  w2[1] = w[pos4 +  9];
+  w2[2] = w[pos4 + 10];
+  w2[3] = w[pos4 + 11];
+  w3[0] = w[pos4 + 12];
+  w3[1] = w[pos4 + 13];
+  w3[2] = w[pos4 + 14];
+  w3[3] = w[pos4 + 15];
+
+  make_utf16le_S (w3, w6, w7);
+  make_utf16le_S (w2, w4, w5);
+  make_utf16le_S (w1, w2, w3);
+  make_utf16le_S (w0, w0, w1);
+
+  sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, (len - pos1) * 2);
+}
+
+DECLSPEC void sha512_update_global_utf16le_swap (sha512_ctx_t *ctx, const __global u32 *w, const int len)
+{
+  u32 w0[4];
+  u32 w1[4];
+  u32 w2[4];
+  u32 w3[4];
+  u32 w4[4];
+  u32 w5[4];
+  u32 w6[4];
+  u32 w7[4];
+
+  int pos1;
+  int pos4;
+
+  for (pos1 = 0, pos4 = 0; pos1 < len - 64; pos1 += 64, pos4 += 16)
+  {
+    w0[0] = w[pos4 +  0];
+    w0[1] = w[pos4 +  1];
+    w0[2] = w[pos4 +  2];
+    w0[3] = w[pos4 +  3];
+    w1[0] = w[pos4 +  4];
+    w1[1] = w[pos4 +  5];
+    w1[2] = w[pos4 +  6];
+    w1[3] = w[pos4 +  7];
+    w2[0] = w[pos4 +  8];
+    w2[1] = w[pos4 +  9];
+    w2[2] = w[pos4 + 10];
+    w2[3] = w[pos4 + 11];
+    w3[0] = w[pos4 + 12];
+    w3[1] = w[pos4 + 13];
+    w3[2] = w[pos4 + 14];
+    w3[3] = w[pos4 + 15];
+
+    make_utf16le_S (w3, w6, w7);
+    make_utf16le_S (w2, w4, w5);
+    make_utf16le_S (w1, w2, w3);
+    make_utf16le_S (w0, w0, w1);
+
+    w0[0] = swap32_S (w0[0]);
+    w0[1] = swap32_S (w0[1]);
+    w0[2] = swap32_S (w0[2]);
+    w0[3] = swap32_S (w0[3]);
+    w1[0] = swap32_S (w1[0]);
+    w1[1] = swap32_S (w1[1]);
+    w1[2] = swap32_S (w1[2]);
+    w1[3] = swap32_S (w1[3]);
+    w2[0] = swap32_S (w2[0]);
+    w2[1] = swap32_S (w2[1]);
+    w2[2] = swap32_S (w2[2]);
+    w2[3] = swap32_S (w2[3]);
+    w3[0] = swap32_S (w3[0]);
+    w3[1] = swap32_S (w3[1]);
+    w3[2] = swap32_S (w3[2]);
+    w3[3] = swap32_S (w3[3]);
+    w4[0] = swap32_S (w4[0]);
+    w4[1] = swap32_S (w4[1]);
+    w4[2] = swap32_S (w4[2]);
+    w4[3] = swap32_S (w4[3]);
+    w5[0] = swap32_S (w5[0]);
+    w5[1] = swap32_S (w5[1]);
+    w5[2] = swap32_S (w5[2]);
+    w5[3] = swap32_S (w5[3]);
+    w6[0] = swap32_S (w6[0]);
+    w6[1] = swap32_S (w6[1]);
+    w6[2] = swap32_S (w6[2]);
+    w6[3] = swap32_S (w6[3]);
+    w7[0] = swap32_S (w7[0]);
+    w7[1] = swap32_S (w7[1]);
+    w7[2] = swap32_S (w7[2]);
+    w7[3] = swap32_S (w7[3]);
+
+    sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, 64 * 2);
+  }
+
+  w0[0] = w[pos4 +  0];
+  w0[1] = w[pos4 +  1];
+  w0[2] = w[pos4 +  2];
+  w0[3] = w[pos4 +  3];
+  w1[0] = w[pos4 +  4];
+  w1[1] = w[pos4 +  5];
+  w1[2] = w[pos4 +  6];
+  w1[3] = w[pos4 +  7];
+  w2[0] = w[pos4 +  8];
+  w2[1] = w[pos4 +  9];
+  w2[2] = w[pos4 + 10];
+  w2[3] = w[pos4 + 11];
+  w3[0] = w[pos4 + 12];
+  w3[1] = w[pos4 + 13];
+  w3[2] = w[pos4 + 14];
+  w3[3] = w[pos4 + 15];
+
+  make_utf16le_S (w3, w6, w7);
+  make_utf16le_S (w2, w4, w5);
+  make_utf16le_S (w1, w2, w3);
+  make_utf16le_S (w0, w0, w1);
+
+  w0[0] = swap32_S (w0[0]);
+  w0[1] = swap32_S (w0[1]);
+  w0[2] = swap32_S (w0[2]);
+  w0[3] = swap32_S (w0[3]);
+  w1[0] = swap32_S (w1[0]);
+  w1[1] = swap32_S (w1[1]);
+  w1[2] = swap32_S (w1[2]);
+  w1[3] = swap32_S (w1[3]);
+  w2[0] = swap32_S (w2[0]);
+  w2[1] = swap32_S (w2[1]);
+  w2[2] = swap32_S (w2[2]);
+  w2[3] = swap32_S (w2[3]);
+  w3[0] = swap32_S (w3[0]);
+  w3[1] = swap32_S (w3[1]);
+  w3[2] = swap32_S (w3[2]);
+  w3[3] = swap32_S (w3[3]);
+  w4[0] = swap32_S (w4[0]);
+  w4[1] = swap32_S (w4[1]);
+  w4[2] = swap32_S (w4[2]);
+  w4[3] = swap32_S (w4[3]);
+  w5[0] = swap32_S (w5[0]);
+  w5[1] = swap32_S (w5[1]);
+  w5[2] = swap32_S (w5[2]);
+  w5[3] = swap32_S (w5[3]);
+  w6[0] = swap32_S (w6[0]);
+  w6[1] = swap32_S (w6[1]);
+  w6[2] = swap32_S (w6[2]);
+  w6[3] = swap32_S (w6[3]);
+  w7[0] = swap32_S (w7[0]);
+  w7[1] = swap32_S (w7[1]);
+  w7[2] = swap32_S (w7[2]);
+  w7[3] = swap32_S (w7[3]);
+
+  sha512_update_128 (ctx, w0, w1, w2, w3, w4, w5, w6, w7, (len - pos1) * 2);
 }
 
 DECLSPEC void sha512_final (sha512_ctx_t *ctx)
