@@ -61,7 +61,8 @@ impl Gpu {
 
         let program = program_builder
             .devices(device)
-            .build(&context)?;
+            .build(&context)
+            .expect("Compilation failed");
         eprintln!("GPU program successfully compiled.");
 
         let queue = Queue::new(&context, device, None)?;
