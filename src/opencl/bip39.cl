@@ -14,10 +14,15 @@ __constant const uint WORDLENS[2048] = { 7, 7, 4, 5, 5, 6, 6, 8, 6, 5, 6, 8, 7, 
  * Sha256 updater that works for input from constant address space
  */
 inline
-void sha256_update_c(sha256_ctx_t *ctx, __constant const uchar *input, uint input_length) {
-    u32 inDataAlignedTo64Bytes[16] = { 0 };
-    to_bytes_sha2_input_c(inDataAlignedTo64Bytes, input, input_length);
-    sha256_update(ctx, inDataAlignedTo64Bytes, input_length);
+void sha256_update_c(sha256_ctx_t *ctx, u32 *buffer, __constant const uchar *input, uint input_length) {
+    to_bytes_sha2_input_c(buffer, input, input_length);
+    sha256_update(ctx, buffer, input_length);
+}
+
+inline void clear_first_twelve_bytes(u32 *buffer) {
+    buffer[0] = 0;
+    buffer[1] = 0;
+    buffer[2] = 0;
 }
 
 /*
@@ -80,18 +85,19 @@ void bip39_entropy_to_mnemonic(const uchar *entropy, uchar *hash_out) {
 
 	sha256_init (&hasher);
     //uchar buffer[MAX_WORD_LENGTH+1];
-    sha256_update_c(&hasher, WORDS[word_index[ 0]], WORDLENS[word_index[ 0]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 1]], WORDLENS[word_index[ 1]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 2]], WORDLENS[word_index[ 2]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 3]], WORDLENS[word_index[ 3]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 4]], WORDLENS[word_index[ 4]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 5]], WORDLENS[word_index[ 5]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 6]], WORDLENS[word_index[ 6]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 7]], WORDLENS[word_index[ 7]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 8]], WORDLENS[word_index[ 8]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[ 9]], WORDLENS[word_index[ 9]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[10]], WORDLENS[word_index[10]] + 1 /* space character */);
-    sha256_update_c(&hasher, WORDS[word_index[11]], WORDLENS[word_index[11]]);
+    u32 buffer[16] = { 0 };
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 0]], WORDLENS[word_index[ 0]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 1]], WORDLENS[word_index[ 1]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 2]], WORDLENS[word_index[ 2]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 3]], WORDLENS[word_index[ 3]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 4]], WORDLENS[word_index[ 4]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 5]], WORDLENS[word_index[ 5]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 6]], WORDLENS[word_index[ 6]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 7]], WORDLENS[word_index[ 7]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 8]], WORDLENS[word_index[ 8]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[ 9]], WORDLENS[word_index[ 9]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[10]], WORDLENS[word_index[10]] + 1 /* space character */); clear_first_twelve_bytes(buffer);
+    sha256_update_c(&hasher, buffer, WORDS[word_index[11]], WORDLENS[word_index[11]]);
 	sha256_final (&hasher);
 	from_sha256_result(hash_out, hasher.h);
 }
