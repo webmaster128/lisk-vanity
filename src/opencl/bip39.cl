@@ -20,9 +20,9 @@ void sha256_update_c(sha256_ctx_t *ctx, u32 *buffer, __constant const uchar *inp
 }
 
 inline void clear_first_twelve_bytes(u32 *buffer) {
-    buffer[0] = 0;
-    buffer[1] = 0;
-    buffer[2] = 0;
+    buffer[0] = 0; // byte 0-3
+    buffer[1] = 0; // byte 4-7
+    buffer[2] = 0; // byte 8-11
 }
 
 /*
