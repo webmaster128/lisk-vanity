@@ -1,4 +1,3 @@
-/*
 inline uint64_t pubkey_to_address(const uchar *pubkey) {
 	uchar hash[32];
 	SHA256_CTX hasher;
@@ -17,7 +16,6 @@ inline uint64_t pubkey_to_address(const uchar *pubkey) {
         | ((uint64_t) hash[0] << 0*8);
 	return out;
 }
-*/
 
 inline void print_bytes(const uchar *data, size_t len) {
 	for (size_t i = 0; i < len; ++i) {
@@ -151,7 +149,7 @@ __kernel void generate_pubkey(
 	uchar *key;
 	if (generate_key_type == 0) {
 		// lisk passphrase
-		// bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
+		bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
 		key = menomic_hash;
 	} else {
 		// privkey or extended privkey
@@ -160,27 +158,26 @@ __kernel void generate_pubkey(
 	bignum256modm a;
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {
-		uchar in_data[32] = {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 		u32 in[32] = { 0 };
 		uchar hash[64];
 
 		sha512_ctx_t hasher;
 		sha512_init (&hasher);
 
-		to_32bytes_sha512_input(in, in_data);
+		to_32bytes_sha512_input(in, key);
 		// print_bytes(in_data, 32);
-		print_words(in, 8);
+		// print_words(in, 8);
 		sha512_update (&hasher, in, 32);
 
 		sha512_final (&hasher);
 		from_sha512_result(hash, hasher.h);
 
-		printf("(%i) ", hasher.len);
-		print_bytes(hash, 64);
+		// printf("(%i) ", hasher.len);
+		// print_bytes(hash, 64);
 
-		// hash[0] &= 248;
-		// hash[31] &= 127;
-		// hash[31] |= 64;
+		hash[0] &= 248;
+		hash[31] &= 127;
+		hash[31] |= 64;
 		expand256_modm(a, hash, 32);
 	} else {
 		expand256_modm(a, key, 32);
@@ -190,7 +187,7 @@ __kernel void generate_pubkey(
 	uchar pubkey[32];
 	ge25519_pack(pubkey, &A);
 
-	uint64_t address = 0xfffffffffffffffful; //pubkey_to_address(pubkey);
+	uint64_t address = pubkey_to_address(pubkey);
 
 	if (address <= max_address_value) {
 		for (uchar i = 0; i < 32; i++) {
