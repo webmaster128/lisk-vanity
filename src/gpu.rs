@@ -1,11 +1,9 @@
-use ocl::{Device};
-use ocl::builders::DeviceSpecifier;
+use ocl::{Context, Device, Kernel, Queue};
 use ocl::builders::ProgramBuilder;
 use ocl::enums::{DeviceInfo};
 use ocl::flags::MemFlags;
 use ocl::Buffer;
 use ocl::Platform;
-use ocl::ProQue;
 use ocl::Result;
 
 use derivation::GenerateKeyType;
@@ -24,8 +22,8 @@ impl Gpu {
         max_address_value: u64,
         generate_key_type: GenerateKeyType,
     ) -> Result<Gpu> {
-        let mut prog_bldr = ProgramBuilder::new();
-        prog_bldr
+        let mut program_builder = ProgramBuilder::new();
+        program_builder
             .src(include_str!("opencl/types.cl"))
             .src(include_str!("opencl/curve25519-constants.cl"))
             .src(include_str!("opencl/curve25519-constants2.cl"))
@@ -35,6 +33,7 @@ impl Gpu {
             .src(include_str!("opencl/sha512.cl"))
             .src(include_str!("opencl/bip39.cl"))
             .src(include_str!("opencl/entry.cl"));
+
         let platforms = Platform::list();
         if platforms.len() == 0 {
             return Err("No OpenCL platforms exist (check your drivers and OpenCL setup)".into());
@@ -47,26 +46,35 @@ impl Gpu {
             ).into());
         }
 
-        let device = Device::by_idx_wrap(platforms[platform_idx], device_idx).expect("Requested device not found");
-        eprintln!("Using GPU {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
+        let platform = platforms[platform_idx];
+        eprintln!("GPU platform {} {}", platform.vendor()?, platform.name()?);
+
+        let device = Device::by_idx_wrap(platform, device_idx).expect("Requested device not found");
+        eprintln!("Using GPU device {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
         eprintln!("MaxWorkGroupSize {}", device.info(DeviceInfo::MaxWorkGroupSize)?);
 
-        let pro_que = ProQue::builder()
-            .prog_bldr(prog_bldr)
-            .platform(platforms[platform_idx])
-            .device(DeviceSpecifier::Indices(vec![device_idx]))
+        let context = Context::builder()
+            .platform(platform)
+            .devices(device.clone())
             .build()?;
+        eprintln!("GPU context created.");
 
+        let program = program_builder
+            .devices(device)
+            .build(&context)?;
         eprintln!("GPU program successfully compiled.");
 
+        let queue = Queue::new(&context, device, None)?;
+        eprintln!("GPU queue created.");
+
         let result = Buffer::<u8>::builder()
-            .queue(pro_que.queue().clone())
+            .queue(queue.clone())
             .flags(MemFlags::new().write_only())
             .len(32)
             .fill_val(0u8)
             .build()?;
         let key_root = Buffer::<u8>::builder()
-            .queue(pro_que.queue().clone())
+            .queue(queue.clone())
             .flags(MemFlags::new().read_only().host_write_only())
             .len(32)
             .build()?;
@@ -76,14 +84,17 @@ impl Gpu {
             GenerateKeyType::PrivateKey => 1,
         };
 
-        let kernel = pro_que
-            .kernel_builder("generate_pubkey")
+        let kernel = Kernel::builder()
+            .program(&program)
+            .name("generate_pubkey")
+            .queue(queue.clone())
             .global_work_size(threads)
             .arg(&result)
             .arg(&key_root)
             .arg(max_address_value)
             .arg(gen_key_type_code)
             .build()?;
+        eprintln!("GPU kernel built.");
 
         Ok(Gpu {
             kernel,
