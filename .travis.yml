@@ -9,3 +9,19 @@ matrix:
     - rust: stable
     - rust: beta
   fast_finish: true
+
+cache: cargo
+
+install:
+
+script:
+  - cargo build --no-default-features
+  - cargo test --no-default-features
+
+# whitelist long living branches to avoid testing feature branches twice (as branch and as pull request)
+branches:
+  only:
+  - master
+
+notifications:
+  email: false
