@@ -46,18 +46,18 @@ struct Gpu;
 #[cfg(not(feature = "gpu"))]
 impl Gpu {
     pub fn new(
-        platform_idx: usize,
-        device_idx: usize,
-        threads: usize,
-        max_address_value: u64,
-        generate_key_type: GenerateKeyType,
-    ) -> Result<Gpu> {
+        _platform_idx: usize,
+        _device_idx: usize,
+        _threads: usize,
+        _max_address_value: u64,
+        _generate_key_type: GenerateKeyType,
+    ) -> Result<Gpu, String> {
         eprintln!("GPU support has been disabled at compile time.");
         eprintln!("Rebuild with \"--features gpu\" to enable GPU support.");
         process::exit(1);
     }
 
-    pub fn compute(&mut self, key_root: &[u8]) -> Result<Option<[u8; 32]>> {
+    pub fn compute(&mut self, _key_root: &[u8]) -> Result<Option<[u8; 32]>, String> {
         unreachable!()
     }
 }

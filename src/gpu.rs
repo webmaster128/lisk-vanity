@@ -3,10 +3,17 @@ use ocl::enums::DeviceInfo;
 use ocl::flags::MemFlags;
 use ocl::Buffer;
 use ocl::Platform;
-use ocl::Result;
 use ocl::{Context, Device, Kernel, Queue};
 
 use derivation::GenerateKeyType;
+
+fn convert_ocl_error(error: ocl::Error) -> String {
+    return error.to_string();
+}
+
+fn convert_ocl_core_error(error: ocl::OclCoreError) -> String {
+    return error.to_string();
+}
 
 pub struct Gpu {
     kernel: ocl::Kernel,
@@ -21,7 +28,7 @@ impl Gpu {
         threads: usize,
         max_address_value: u64,
         generate_key_type: GenerateKeyType,
-    ) -> Result<Gpu> {
+    ) -> Result<Gpu, String> {
         let mut program_builder = ProgramBuilder::new();
         program_builder
             .src(include_str!("opencl/types.cl"))
@@ -53,13 +60,13 @@ impl Gpu {
         let device = Device::by_idx_wrap(platform, device_idx).expect("Requested device not found");
         eprintln!(
             "Using GPU device {} {}, OpenCL {}",
-            device.vendor()?,
-            device.name()?,
-            device.version()?
+            device.vendor().map_err(convert_ocl_error)?,
+            device.name().map_err(convert_ocl_error)?,
+            device.version().map_err(convert_ocl_core_error)?
         );
         eprintln!(
             "MaxWorkGroupSize {}",
-            device.info(DeviceInfo::MaxWorkGroupSize)?
+            device.info(DeviceInfo::MaxWorkGroupSize).map_err(convert_ocl_error)?
         );
 
         let context = Context::builder()
@@ -110,7 +117,7 @@ impl Gpu {
         })
     }
 
-    pub fn compute(&mut self, key_root: &[u8]) -> Result<Option<[u8; 32]>> {
+    pub fn compute(&mut self, key_root: &[u8]) -> Result<Option<[u8; 32]>, String> {
         debug_assert!({
             let mut result = [0u8; 32];
             self.result.read(&mut result as &mut [u8]).enq()?;
