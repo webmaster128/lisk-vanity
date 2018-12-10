@@ -1,10 +1,10 @@
-use ocl::{Context, Device, Kernel, Queue};
 use ocl::builders::ProgramBuilder;
-use ocl::enums::{DeviceInfo};
+use ocl::enums::DeviceInfo;
 use ocl::flags::MemFlags;
 use ocl::Buffer;
 use ocl::Platform;
 use ocl::Result;
+use ocl::{Context, Device, Kernel, Queue};
 
 use derivation::GenerateKeyType;
 
@@ -43,15 +43,24 @@ impl Gpu {
                 "Platform index {} too large (max {})",
                 platform_idx,
                 platforms.len() - 1
-            ).into());
+            )
+            .into());
         }
 
         let platform = platforms[platform_idx];
         eprintln!("GPU platform {} {}", platform.vendor()?, platform.name()?);
 
         let device = Device::by_idx_wrap(platform, device_idx).expect("Requested device not found");
-        eprintln!("Using GPU device {} {}, OpenCL {}", device.vendor()?, device.name()?, device.version()?);
-        eprintln!("MaxWorkGroupSize {}", device.info(DeviceInfo::MaxWorkGroupSize)?);
+        eprintln!(
+            "Using GPU device {} {}, OpenCL {}",
+            device.vendor()?,
+            device.name()?,
+            device.version()?
+        );
+        eprintln!(
+            "MaxWorkGroupSize {}",
+            device.info(DeviceInfo::MaxWorkGroupSize)?
+        );
 
         let context = Context::builder()
             .platform(platform)
@@ -62,9 +71,7 @@ impl Gpu {
         let queue = Queue::new(&context, device, None)?;
         eprintln!("GPU queue created.");
 
-        let program = program_builder
-            .devices(device)
-            .build(&context)?;
+        let program = program_builder.devices(device).build(&context)?;
         eprintln!("GPU program successfully compiled.");
 
         let result = Buffer::<u8>::builder()

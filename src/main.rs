@@ -9,31 +9,31 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-extern crate sha2;
 extern crate clap;
 extern crate digest;
 extern crate ed25519_dalek;
 extern crate hex;
 extern crate num_bigint;
 extern crate num_cpus;
+extern crate sha2;
 
 extern crate rand;
 use rand::{OsRng, Rng};
 
 extern crate num_traits;
-use num_traits::{ToPrimitive};
+use num_traits::ToPrimitive;
 
 #[cfg(feature = "gpu")]
 extern crate ocl;
 
 mod cpu;
-use cpu::bip39::{entropy_to_mnemonic};
+use cpu::bip39::entropy_to_mnemonic;
 
 mod derivation;
 use derivation::{cut_last_16, pubkey_to_address, secret_to_pubkey, GenerateKeyType};
 
 mod pubkey_matcher;
-use pubkey_matcher::{PubkeyMatcher, max_address};
+use pubkey_matcher::{max_address, PubkeyMatcher};
 
 #[cfg(feature = "gpu")]
 mod gpu;
@@ -132,56 +132,66 @@ fn main() {
                 .default_value("14")
                 .required_unless("suffix")
                 .help("The max length for the address"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("generate_keypair")
                 .short("k")
                 .long("generate-keypair")
                 .help("Generate a key pair instead of a passphrase"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("threads")
                 .short("t")
                 .long("threads")
                 .value_name("N")
                 .help("The number of threads to use [default: number of cores minus one]"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("gpu")
                 .short("g")
                 .long("gpu")
                 .help("Enable use of the GPU through OpenCL"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("limit")
                 .short("l")
                 .long("limit")
                 .value_name("N")
                 .default_value("1")
                 .help("Generate N addresses, then exit (0 for infinite)"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("gpu_threads")
                 .long("gpu-threads")
                 .value_name("N")
                 .default_value("1048576")
                 .help("The number of GPU threads to use"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("no_progress")
                 .long("no-progress")
                 .help("Disable progress output"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("simple_output")
                 .long("simple-output")
                 .help("Output found keys in the form \"[key] [address]\""),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("gpu_platform")
                 .long("gpu-platform")
                 .value_name("INDEX")
                 .default_value("0")
                 .help("The GPU platform to use"),
-        ).arg(
+        )
+        .arg(
             clap::Arg::with_name("gpu_device")
                 .long("gpu-device")
                 .value_name("INDEX")
                 .default_value("0")
                 .help("The GPU device to use"),
-        ).get_matches();
+        )
+        .get_matches();
 
     let max_length = args
         .value_of("length")
@@ -278,7 +288,8 @@ fn main() {
             gpu_threads,
             max_address(max_length),
             gen_key_type,
-        ).unwrap();
+        )
+        .unwrap();
         gpu_thread = Some(thread::spawn(move || {
             let mut rng = OsRng::new().expect("Failed to get RNG for seed");
             loop {

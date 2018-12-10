@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
+use cpu::bip39::entropy_to_mnemonic;
 use ed25519_dalek::{PublicKey, SecretKey};
-use sha2::{Digest,Sha256,Sha512};
-use cpu::bip39::{entropy_to_mnemonic};
+use sha2::{Digest, Sha256, Sha512};
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum GenerateKeyType {
@@ -28,7 +28,7 @@ pub fn secret_to_pubkey(key_material: [u8; 32], generate_key_type: GenerateKeyTy
             let hash = Sha256::digest(&mnemonic);
             let hash_with_right_length = <&[u8; 32]>::try_from(&hash[0..32]).unwrap();
             ed25519_privkey_to_pubkey(hash_with_right_length)
-        },
+        }
         GenerateKeyType::PrivateKey => ed25519_privkey_to_pubkey(&key_material),
     }
 }
@@ -87,9 +87,6 @@ mod tests {
             &hex::decode("f4852b270f76dc8b49bfa88de5906e81d3b001d23852f0e74ba60cac7180a184")
                 .unwrap(),
         );
-        assert_eq!(
-            pubkey_to_address(&pubkey),
-            6076671634347365051u64
-        );
+        assert_eq!(pubkey_to_address(&pubkey), 6076671634347365051u64);
     }
 }

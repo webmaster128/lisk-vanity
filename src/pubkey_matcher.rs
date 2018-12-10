@@ -5,7 +5,11 @@ use derivation::pubkey_to_address;
 
 // largest valid address
 pub fn max_address(max_len: usize) -> u64 {
-    if max_len >= 20 { 18446744073709551615u64 } else { pow(10u64, max_len) - 1 }
+    if max_len >= 20 {
+        18446744073709551615u64
+    } else {
+        pow(10u64, max_len) - 1
+    }
 }
 
 pub struct PubkeyMatcher {
@@ -28,7 +32,7 @@ impl PubkeyMatcher {
         // Example max_len = 15
         // Short address: 999999999999999 (15 chars)
         // Strict upper bound = 10^15 = 1000000000000000
-        return address <= self.max_address_value
+        return address <= self.max_address_value;
     }
 
     pub fn estimated_attempts(&self) -> BigInt {
