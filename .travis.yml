@@ -16,7 +16,7 @@ install:
 
 script:
   - cargo build --no-default-features
-  - cargo test
+  - cargo test --no-default-features
 
 # whitelist long living branches to avoid testing feature branches twice (as branch and as pull request)
 branches:
