@@ -212,8 +212,8 @@ version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "nano-vanity"
-version = "0.4.5"
+name = "lisk-vanity"
+version = "0.1.0"
 dependencies = [
  "clap 2.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "digest 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",

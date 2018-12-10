@@ -1,85 +1,96 @@
-# nano-vanity
+# lisk-vanity
 
-Generate a NANO address with a prefix of your choice.
-The longer the prefix, the longer it'll take to compute.
+Generates a short Lisk address. The shorter the address, the longer it'll take to compute.
 
-## Installation
+## Requirements
 
-First, setup Rust. The best way to do this is with [rustup](https://rustup.rs).
+* [Rustup](https://rustup.rs/) or a different way to run Rust nightly
 
-To install `nano-vanity` from crates.io:
-
-```
-cargo install nano-vanity
-```
-
-To install `nano-vanity` from source:
+## Installation from source
 
 ```
-cargo install
+git clone https://github.com/webmaster128/lisk-vanity.git
+cd lisk-vanity
 ```
 
-If you want to enable GPU support, install OpenCL and add `--features gpu` to the install command.
+To compile, we run the following commands Rust nightly environment (`rustup run nightly bash`):
 
-For a list of `nano-vanity` options, use `nano-vanity --help`.
+```
+cargo build --release
+./target/release/lisk-vanity --version
+```
 
-## Seed Generation
+## Getting started
 
-By default, `nano-vanity` generates private keys instead of seeds.
-You can use these in the desktop wallet (they're refered to as adhoc keys),
-however, most other wallets do not yet support them.
+For a list of `lisk-vanity` options, use `lisk-vanity --help`.
 
-You can generate seeds instead of private keys with `--generate-seed`.
-Note that doing so is a bit slower.
+To search for an address of length 13 (suffix "L" expluded), run
 
-To explain the difference between seeds and private keys:
+```
+$ lisk-vanity 13
+Estimated attempts needed: 1844674
+Tried 1060873 keys (~57.51%; 41497.1 keys/s)
+Found matching account!
+Private Key: fan bonus chronic like lobster ankle forum unusual hedgehog rich cruise craft
+Address:     2702373550273L
+```
 
-- Seeds plus an index (1st key, 2nd key, etc) generate a private key.
-  Currently, this project will always use the first index (index 0).
-- A private key generates a public key.
-- Addresses are another way of writing public keys.
+Add `--gpu` to add GPU support:
 
-## Wildcards
+```
+$ lisk-vanity --gpu 12
+Estimated attempts needed: 18446744
+GPU platform NVIDIA Corporation NVIDIA CUDA
+Using GPU device NVIDIA Corporation GeForce GTX 1080, OpenCL 1.2
+Tried 7453113 keys (~40.40%; 709077.4 keys/s)
+Found matching account!
+Private Key: autumn expire topple rebel rebuild rack process digital possible decorate trigger stand
+Address:     310696579609L
+```
 
-You can leave a character up to chance by using `.` or `*`.
+Set CPU thread to zero to use GPU only:
 
-You can specify that a character must be a number with `#`.
+```
+$ lisk-vanity --gpu --threads 0 12
+Estimated attempts needed: 18446744
+GPU platform NVIDIA Corporation NVIDIA CUDA
+Using GPU device NVIDIA Corporation GeForce GTX 1080, OpenCL 1.2
+Tried 14680064 keys (~79.58%; 651781.0 keys/s)
+Found matching account!
+Private Key: average depend juice skate pupil order lift mention foster modify uphold divert
+Address:     483891294046L
+```
 
-## Using your GPU
+Use `--generate-keypair` to generate raw Ed25519 keypair in libsodium format (32 bytes secret key + 32 bytes public key)
+
+```
+$ lisk-vanity  --gpu --generate-keypair --threads 0 12
+Estimated attempts needed: 18446744
+GPU platform NVIDIA Corporation NVIDIA CUDA
+Using GPU device NVIDIA Corporation GeForce GTX 1080, OpenCL 1.2
+Tried 32505856 keys (~176.21%; 682165.2 keys/s)
+Found matching account!
+Private Key: B977D77F7126BC1E07E03FC276A2AC711148DF5497643BE575B24402ADA03153FCF22269A265BC349932ED7EACD34504FBBC8D05B92E4E4DC24D7955757E0D5C
+Address:     456618761412L
+```
+
+## Advances GPU settings
 
 This project supports using your GPU to compute the address.
 This utilizes OpenCL, so you'll need OpenCL installed and working.
 
-To build this project with GPU support, pass cargo `--features gpu`.
+This project is built with GPU support by default (cargo feature "gpu").
 
 To enable GPU use, use the `--gpu` (or `-g`) option. To disable
 use of your CPU, use `--threads 0` (or `-t 0`).
 
-Intel GPUs are not supported, as in most cases running the code on
-the integrated GPU is no faster than running it on the CPU.
-
-To change your GPU device, use `--gpu-device [index]`, where `[index]`
+To change your GPU platform, use `--gpu-platform [index]`, where `[index]`
 is the index of your GPU starting at 0.
-To change your GPU platform, use `--gpu-platform [index]`.
+To change your GPU device, use `--gpu-device [index]`.
 
-## Testing randomness
+## History and credits
 
-To test the randomness of seeds from this program, you can use dieharder
-([here](http://www.linux-mag.com/id/4125/)'s an article on it).
-
-Dieharder should not be taken as proof that this program is secure, however, it should be used as evidence, in combination
-with an examination of the program's source code.
-
-Here's an example of how to run this with dieharder:
-
-```
-nano-vanity --threads 1 --no-progress --limit 0 --simple-output xrb_1 | cut -d' ' -f1 | xxd -r -p | dieharder -a -g stdin_input_raw
-```
-
-If you get a weak or failed test, run that test again by passing dieharder `-d [test]`.
-While it's statistically unlikely that a test would fail despite nothing being wrong, it can happen,
-especially given the number of tests dieharder runs.
-
-To be even more careful, you can modify nano-vanity's parameters.
-The important ones are `--simple-output`, which makes the output format easily parseable,
-and `-l 0`, which generates infinite keys instead of just one.
+lisk-vanity is a fork of [nano-vanity](https://github.com/PlasmaPower/nano-vanity) by Lee Bousfield
+and Colin LeMahieu. nano-vanity laid the foundation for GPU powered Ed25519 keypair generation.
+lisk-vanity added Lisk address derivation and BIP39 passphrase support. The OpenCL implementation
+of SHA256/SHA512 is from [hashcat](https://github.com/hashcat/hashcat).

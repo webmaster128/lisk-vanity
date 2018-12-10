@@ -1,11 +1,11 @@
 [package]
-name = "nano-vanity"
-version = "0.4.5"
-description = "Generate NANO cryptocurrency addresses with a given prefix"
+name = "lisk-vanity"
+version = "0.1.0"
+description = "Generate short Lisk addresses"
 keywords = ["cryptocurrency", "nanocurrency", "opencl"]
-authors = ["Lee Bousfield <ljbousfield@gmail.com>"]
+authors = ["Simon Warta <simon@warta.it>"]
 readme = "README.md"
-repository = "https://github.com/PlasmaPower/nano-vanity"
+repository = "https://github.com/webmaster128/lisk-vanity"
 license = "BSD-2-Clause"
 
 [features]
