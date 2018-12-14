@@ -35,10 +35,12 @@ impl Gpu {
             .src(include_str!("opencl/curve25519-constants.cl"))
             .src(include_str!("opencl/curve25519-constants2.cl"))
             .src(include_str!("opencl/curve25519.cl"))
-            .src(include_str!("opencl/sha2.cl"))
-            .src(include_str!("opencl/sha256.cl"))
-            .src(include_str!("opencl/sha512.cl"))
+            .src(include_str!("opencl/sha/inc_hash_functions.cl"))
+            .src(include_str!("opencl/sha/sha256.cl"))
+            .src(include_str!("opencl/sha/sha512.cl"))
+            .src(include_str!("opencl/sha_bindings.cl"))
             .src(include_str!("opencl/bip39.cl"))
+            .src(include_str!("opencl/lisk.cl"))
             .src(include_str!("opencl/entry.cl"));
 
         let platforms = Platform::list();

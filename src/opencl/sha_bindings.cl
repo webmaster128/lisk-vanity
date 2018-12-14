@@ -1,7 +1,3 @@
-// from https://github.com/hashcat/hashcat/blob/master/OpenCL/inc_hash_functions.cl
-#define SHIFT_RIGHT_64(x,n) ((x) >> (n))
-#define SHIFT_RIGHT_32(x,n) ((x) >> (n))
-
 inline u32 read_four_bytes(const uchar *start) {
 	return 0
         | (((u32) start[0]) << 3*8)
