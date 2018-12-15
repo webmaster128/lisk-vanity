@@ -5,6 +5,13 @@ use ocl::Buffer;
 use ocl::Platform;
 use ocl::{Context, Device, Kernel, Queue};
 
+use ocl::core;
+
+use std::ffi::CString;
+use std::time::{Duration};
+
+use std::thread;
+
 use derivation::GenerateKeyType;
 
 fn convert_ocl_error(error: ocl::Error) -> String {
@@ -79,6 +86,32 @@ impl Gpu {
 
         let queue = Queue::new(&context, device, None)?;
         eprintln!("GPU queue created.");
+
+
+        let strings = program_builder.get_src_strings().unwrap();
+        let program = core::create_program_with_source(&context, &strings)
+            .expect("Error creating source");
+        let program2 = program.clone();
+        let cmplr_opts = CString::new("").unwrap();
+
+        thread::spawn(move || loop {
+            // some work here
+            let status = core::get_program_build_info(
+                &program, device, core::ProgramBuildInfo::BuildStatus
+                ).expect("error");
+            let log = core::get_program_build_info(
+                &program, device, core::ProgramBuildInfo::BuildLog
+                ).expect("error");
+            eprintln!("Status: {}; Log: '{}'", status, log);
+            thread::sleep(Duration::from_millis(1000));
+        });
+
+        eprintln!("Build started");
+        core::build_program(
+            &program2, Option::Some(&[device]),
+            &cmplr_opts, None, None)
+            .expect("Could not build");
+        eprintln!("Build ended");
 
         let program = program_builder.devices(device).build(&context)?;
         eprintln!("GPU program successfully compiled.");
