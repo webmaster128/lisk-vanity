@@ -89,7 +89,7 @@ barrett_reduce256_modm(bignum256modm r, const bignum256modm q1, const bignum256m
 	/* q1 = x >> 248 = 264 bits = 9 30 bit elements
 	   q2 = mu * q1
 	   q3 = (q2 / 256(32+1)) = q2 / (2^8)^(32+1) = q2 >> 264 */
-	c  = mul32x32_64(modm_mu[0], q1[7]) + mul32x32_64(modm_mu[1], q1[6]) + mul32x32_64(modm_mu[2], q1[5]) + mul32x32_64(modm_mu[3], q1[4]) + mul32x32_64(modm_mu[4], q1[3]) + mul32x32_64(modm_mu[5], q1[2]) + mul32x32_64(modm_mu[6], q1[1]) + mul32x32_64(modm_mu[7], q1[0]); 
+	c  = mul32x32_64(modm_mu[0], q1[7]) + mul32x32_64(modm_mu[1], q1[6]) + mul32x32_64(modm_mu[2], q1[5]) + mul32x32_64(modm_mu[3], q1[4]) + mul32x32_64(modm_mu[4], q1[3]) + mul32x32_64(modm_mu[5], q1[2]) + mul32x32_64(modm_mu[6], q1[1]) + mul32x32_64(modm_mu[7], q1[0]);
 	c >>= 30;
 	c += mul32x32_64(modm_mu[0], q1[8]) + mul32x32_64(modm_mu[1], q1[7]) + mul32x32_64(modm_mu[2], q1[6]) + mul32x32_64(modm_mu[3], q1[5]) + mul32x32_64(modm_mu[4], q1[4]) + mul32x32_64(modm_mu[5], q1[3]) + mul32x32_64(modm_mu[6], q1[2]) + mul32x32_64(modm_mu[7], q1[1]) + mul32x32_64(modm_mu[8], q1[0]);
 	f = (bignum256modm_element_t)c; q3[0] = (f >> 24) & 0x3f; c >>= 30;
@@ -167,7 +167,7 @@ add256_modm(bignum256modm r, const bignum256modm x, const bignum256modm y) {
 }
 
 /* multiplication modulo m */
-static void 
+static void
 mul256_modm(bignum256modm r, const bignum256modm x, const bignum256modm y) {
 	bignum256modm r1, q1;
 	uint64_t c;
@@ -194,13 +194,13 @@ mul256_modm(bignum256modm r, const bignum256modm x, const bignum256modm y) {
 	c += mul32x32_64(x[0], y[8]) + mul32x32_64(x[1], y[7]) + mul32x32_64(x[2], y[6]) + mul32x32_64(x[3], y[5]) + mul32x32_64(x[4], y[4]) + mul32x32_64(x[5], y[3]) + mul32x32_64(x[6], y[2]) + mul32x32_64(x[7], y[1]) + mul32x32_64(x[8], y[0]);
 	f = (bignum256modm_element_t)c; r1[8] = (f & 0x00ffffff); q1[0] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[1], y[8]) + mul32x32_64(x[2], y[7]) + mul32x32_64(x[3], y[6]) + mul32x32_64(x[4], y[5]) + mul32x32_64(x[5], y[4]) + mul32x32_64(x[6], y[3]) + mul32x32_64(x[7], y[2]) + mul32x32_64(x[8], y[1]);
-	f = (bignum256modm_element_t)c; q1[0] = (q1[0] | (f << 22)) & 0x3fffffff; q1[1] = (f >> 8) & 0x3fffff; c >>= 30;	
+	f = (bignum256modm_element_t)c; q1[0] = (q1[0] | (f << 22)) & 0x3fffffff; q1[1] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[2], y[8]) + mul32x32_64(x[3], y[7]) + mul32x32_64(x[4], y[6]) + mul32x32_64(x[5], y[5]) + mul32x32_64(x[6], y[4]) + mul32x32_64(x[7], y[3]) + mul32x32_64(x[8], y[2]);
-	f = (bignum256modm_element_t)c; q1[1] = (q1[1] | (f << 22)) & 0x3fffffff; q1[2] = (f >> 8) & 0x3fffff; c >>= 30;	
+	f = (bignum256modm_element_t)c; q1[1] = (q1[1] | (f << 22)) & 0x3fffffff; q1[2] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[3], y[8]) + mul32x32_64(x[4], y[7]) + mul32x32_64(x[5], y[6]) + mul32x32_64(x[6], y[5]) + mul32x32_64(x[7], y[4]) + mul32x32_64(x[8], y[3]);
-	f = (bignum256modm_element_t)c; q1[2] = (q1[2] | (f << 22)) & 0x3fffffff; q1[3] = (f >> 8) & 0x3fffff; c >>= 30;	
+	f = (bignum256modm_element_t)c; q1[2] = (q1[2] | (f << 22)) & 0x3fffffff; q1[3] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[4], y[8]) + mul32x32_64(x[5], y[7]) + mul32x32_64(x[6], y[6]) + mul32x32_64(x[7], y[5]) + mul32x32_64(x[8], y[4]);
-	f = (bignum256modm_element_t)c; q1[3] = (q1[3] | (f << 22)) & 0x3fffffff; q1[4] = (f >> 8) & 0x3fffff; c >>= 30;	
+	f = (bignum256modm_element_t)c; q1[3] = (q1[3] | (f << 22)) & 0x3fffffff; q1[4] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[5], y[8]) + mul32x32_64(x[6], y[7]) + mul32x32_64(x[7], y[6]) + mul32x32_64(x[8], y[5]);
 	f = (bignum256modm_element_t)c; q1[4] = (q1[4] | (f << 22)) & 0x3fffffff; q1[5] = (f >> 8) & 0x3fffff; c >>= 30;
 	c += mul32x32_64(x[6], y[8]) + mul32x32_64(x[7], y[7]) + mul32x32_64(x[8], y[6]);
@@ -262,7 +262,7 @@ expand256_modm(bignum256modm out, const unsigned char *in, size_t len) {
 	q1[5] = ((x[12] >> 14) | (x[13] << 18)) & 0x3fffffff;
 	q1[6] = ((x[13] >> 12) | (x[14] << 20)) & 0x3fffffff;
 	q1[7] = ((x[14] >> 10) | (x[15] << 22)) & 0x3fffffff;
-	q1[8] = ((x[15] >>  8)                );	
+	q1[8] = ((x[15] >>  8)                );
 
 	barrett_reduce256_modm(out, q1, out);
 }
@@ -387,7 +387,7 @@ sub256_modm_batch(bignum256modm out, const bignum256modm a, const bignum256modm 
 		case 3: out[i] = (a[i] - b[i]) - carry; carry = (out[i] >> 31); out[i] &= 0x3fffffff; i++;
 		case 2: out[i] = (a[i] - b[i]) - carry; carry = (out[i] >> 31); out[i] &= 0x3fffffff; i++;
 		case 1: out[i] = (a[i] - b[i]) - carry; carry = (out[i] >> 31); out[i] &= 0x3fffffff; i++;
-		case 0: 
+		case 0:
 		default: out[i] = (a[i] - b[i]) - carry;
 	}
 }
@@ -497,7 +497,7 @@ curve25519_add(bignum25519 out, const bignum25519 a, const bignum25519 b) {
 	out[9] = a[9] + b[9];
 }
 
-__inline void 
+__inline void
 curve25519_add_after_basic(bignum25519 out, const bignum25519 a, const bignum25519 b) {
 	uint32_t c;
 	out[0] = a[0] + b[0]    ; c = (out[0] >> 26); out[0] &= reduce_mask_26;
@@ -1138,15 +1138,15 @@ __inline void
 ge25519_p1p1_to_partial(ge25519 *r, const ge25519_p1p1 *p) {
 	curve25519_mul(r->x, p->x, p->t);
 	curve25519_mul(r->y, p->y, p->z);
-	curve25519_mul(r->z, p->z, p->t); 
+	curve25519_mul(r->z, p->z, p->t);
 }
 
 __inline void
 ge25519_p1p1_to_full(ge25519 *r, const ge25519_p1p1 *p) {
 	curve25519_mul(r->x, p->x, p->t);
 	curve25519_mul(r->y, p->y, p->z);
-	curve25519_mul(r->z, p->z, p->t); 
-	curve25519_mul(r->t, p->x, p->y); 
+	curve25519_mul(r->z, p->z, p->t);
+	curve25519_mul(r->t, p->x, p->y);
 }
 
 static void
@@ -1507,7 +1507,7 @@ ge25519_scalarmult_base_niels(ge25519 *r, const bignum256modm s) {
 	//memset(r->z, 0, sizeof(bignum25519));
 	for (size_t n = 0; n < sizeof(bignum25519); n++) r->z[n] = 0;
 	curve25519_copy(r->t, t.t2d);
-	r->z[0] = 2;	
+	r->z[0] = 2;
 	for (i = 3; i < 64; i += 2) {
 		ge25519_scalarmult_base_choose_niels(&t, i / 2, b[i]);
 		ge25519_nielsadd2(r, &t);
@@ -1524,4 +1524,3 @@ ge25519_scalarmult_base_niels(ge25519 *r, const bignum256modm s) {
 		ge25519_nielsadd2(r, &t);
 	}
 }
-
