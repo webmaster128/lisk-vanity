@@ -33,16 +33,16 @@ __kernel void generate_pubkey(
 	key_material[22] ^= (thread_id >> (1*8)) & 0xFF;
 	key_material[23] ^= (thread_id >> (0*8)) & 0xFF;
 
-	uchar menomic_hash[32];
+	//uchar menomic_hash[32];
 	uchar *key;
-	if (generate_key_type == 0) {
+	// if (generate_key_type == 0) {
 		// lisk passphrase
-		bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
-		key = menomic_hash;
-	} else {
+		//bip39_entropy_to_mnemonic(key_material+16, menomic_hash);
+		//key = menomic_hash;
+	//} else {
 		// privkey or extended privkey
 		key = key_material;
-	}
+	//}
 	bignum256modm a;
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {

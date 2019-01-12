@@ -39,7 +39,7 @@ impl Gpu {
             .src(include_str!("opencl/sha/sha256.cl"))
             .src(include_str!("opencl/sha/sha512.cl"))
             .src(include_str!("opencl/sha_bindings.cl"))
-            .src(include_str!("opencl/bip39.cl"))
+            // .src(include_str!("opencl/bip39.cl"))
             .src(include_str!("opencl/lisk.cl"))
             .src(include_str!("opencl/entry.cl"));
 
