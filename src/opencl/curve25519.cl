@@ -1493,6 +1493,7 @@ ge25519_scalarmult_base_choose_niels(__private ge25519_niels *t, uint32_t pos, s
 
 /* computes [s]basepoint */
 // modified to remove basepoint table argument
+// and to work around the missing memset function
 static void
 ge25519_scalarmult_base_niels(__private ge25519 *r, const bignum256modm s) {
 	signed char b[64];
@@ -1504,8 +1505,9 @@ ge25519_scalarmult_base_niels(__private ge25519 *r, const bignum256modm s) {
 	ge25519_scalarmult_base_choose_niels(&t, 0, b[1]);
 	curve25519_sub_reduce(r->x, t.xaddy, t.ysubx);
 	curve25519_add_reduce(r->y, t.xaddy, t.ysubx);
-	//memset(r->z, 0, sizeof(bignum25519));
-	for (size_t n = 0; n < sizeof(bignum25519); n++) r->z[n] = 0;
+	// Original: memset(r->z, 0, sizeof(bignum25519));
+	// r->z is a bignum25519, i.e. a 10 element array
+	for (size_t n = 0; n < 10; n++) r->z[n] = 0;
 	curve25519_copy(r->t, t.t2d);
 	r->z[0] = 2;
 	for (i = 3; i < 64; i += 2) {
