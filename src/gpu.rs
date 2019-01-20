@@ -67,6 +67,12 @@ impl Gpu {
             device.version().map_err(convert_ocl_core_error)?
         );
         eprintln!(
+            "Address bits {}",
+            device
+                .info(DeviceInfo::AddressBits)
+                .map_err(convert_ocl_error)?
+        );
+        eprintln!(
             "MaxWorkGroupSize {}",
             device
                 .info(DeviceInfo::MaxWorkGroupSize)
