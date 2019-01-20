@@ -68,7 +68,9 @@ impl Gpu {
         );
         eprintln!(
             "MaxWorkGroupSize {}",
-            device.info(DeviceInfo::MaxWorkGroupSize).map_err(convert_ocl_error)?
+            device
+                .info(DeviceInfo::MaxWorkGroupSize)
+                .map_err(convert_ocl_error)?
         );
 
         let context = Context::builder()
