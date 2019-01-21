@@ -1,11 +1,13 @@
-// inline void print_bytes(const uchar *data, size_t len) {
+// CUSTOM_INLINE
+// void print_bytes(const uchar *data, size_t len) {
 // 	for (size_t i = 0; i < len; ++i) {
 // 		printf("%.2x", data[i]);
 // 	}
 // 	printf("\n");
 // }
 
-// inline void print_words(const u32 *data, size_t len) {
+// CUSTOM_INLINE
+// void print_words(const u32 *data, size_t len) {
 // 	for (size_t i = 0; i < len; ++i) {
 // 		printf("%.8x ", data[i]);
 // 	}

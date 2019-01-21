@@ -1,4 +1,5 @@
-inline u32 read_four_bytes(const uchar *start) {
+CUSTOM_INLINE
+u32 read_four_bytes(const uchar *start) {
 	return 0
         | (((u32) start[0]) << 3*8)
         | (((u32) start[1]) << 2*8)
@@ -6,7 +7,8 @@ inline u32 read_four_bytes(const uchar *start) {
         | (((u32) start[3]) << 0*8);
 }
 
-inline void to_32bytes_sha2_input(u32 *out, const uchar *in) {
+CUSTOM_INLINE
+void to_32bytes_sha2_input(u32 *out, const uchar *in) {
 	out[0] = read_four_bytes(in +  0);
 	out[1] = read_four_bytes(in +  4);
 	out[2] = read_four_bytes(in +  8);
@@ -17,14 +19,16 @@ inline void to_32bytes_sha2_input(u32 *out, const uchar *in) {
 	out[7] = read_four_bytes(in + 28);
 }
 
-inline void to_16bytes_sha2_input(u32 *out, const uchar *in) {
+CUSTOM_INLINE
+void to_16bytes_sha2_input(u32 *out, const uchar *in) {
 	out[0] = read_four_bytes(in +  0);
 	out[1] = read_four_bytes(in +  4);
 	out[2] = read_four_bytes(in +  8);
 	out[3] = read_four_bytes(in + 12);
 }
 
-inline void to_bytes_sha2_input(u32 *out, const uchar *in, size_t len) {
+CUSTOM_INLINE
+void to_bytes_sha2_input(u32 *out, const uchar *in, size_t len) {
 	for (size_t i = 0; i < len; ++i) {
 		size_t word = i / 4;
 		size_t index_in_word = i % 4;
@@ -32,7 +36,8 @@ inline void to_bytes_sha2_input(u32 *out, const uchar *in, size_t len) {
 	}
 }
 
-inline void to_bytes_sha2_input_c(u32 *out, const __constant uchar *in, size_t len) {
+CUSTOM_INLINE
+void to_bytes_sha2_input_c(u32 *out, const __constant uchar *in, size_t len) {
 	for (size_t i = 0; i < len; ++i) {
 		size_t word = i / 4;
 		size_t index_in_word = i % 4;
@@ -40,7 +45,8 @@ inline void to_bytes_sha2_input_c(u32 *out, const __constant uchar *in, size_t l
 	}
 }
 
-inline void from_sha256_result(uchar *out, const u32 *in) {
+CUSTOM_INLINE
+void from_sha256_result(uchar *out, const u32 *in) {
 	out[ 0] = (in[0] >> (3*8)) & 0xff;
 	out[ 1] = (in[0] >> (2*8)) & 0xff;
 	out[ 2] = (in[0] >> (1*8)) & 0xff;
@@ -75,7 +81,8 @@ inline void from_sha256_result(uchar *out, const u32 *in) {
 	out[31] = (in[7] >> (0*8)) & 0xff;
 }
 
-inline void from_sha512_result(uchar *out, const u64 *in) {
+CUSTOM_INLINE
+void from_sha512_result(uchar *out, const u64 *in) {
 	out[ 0] = (h32_from_64_S (in[0]) >> (3*8)) & 0xff;
 	out[ 1] = (h32_from_64_S (in[0]) >> (2*8)) & 0xff;
 	out[ 2] = (h32_from_64_S (in[0]) >> (1*8)) & 0xff;

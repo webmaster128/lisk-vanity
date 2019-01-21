@@ -13,13 +13,14 @@ __constant const uint WORDLENS[2048] = { 7, 7, 4, 5, 5, 6, 6, 8, 6, 5, 6, 8, 7, 
 /*
  * Sha256 updater that works for input from constant address space
  */
-inline
+CUSTOM_INLINE
 void sha256_update_c(sha256_ctx_t *ctx, u32 *buffer, __constant const uchar *input, uint input_length) {
     to_bytes_sha2_input_c(buffer, input, input_length);
     sha256_update(ctx, buffer, input_length);
 }
 
-inline void clear_first_twelve_bytes(u32 *buffer) {
+CUSTOM_INLINE
+void clear_first_twelve_bytes(u32 *buffer) {
     buffer[0] = 0; // byte 0-3
     buffer[1] = 0; // byte 4-7
     buffer[2] = 0; // byte 8-11
@@ -28,7 +29,7 @@ inline void clear_first_twelve_bytes(u32 *buffer) {
 /*
  * 16 bytes input data
  */
-inline
+CUSTOM_INLINE
 void bip39_entropy_to_mnemonic(const uchar *entropy, uchar *hash_out) {
     uchar checksum[32];
 	u32 inDataAlignedTo64Bytes[16] = { 0 };

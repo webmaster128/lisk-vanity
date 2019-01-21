@@ -12,8 +12,10 @@ typedef long int64_t;
 #define _OPENCL_COMPILER 1
 #endif
 
+#define CUSTOM_INLINE inline __attribute__((always_inline))
+
 // used in sha512
-#define DECLSPEC inline
+#define DECLSPEC CUSTOM_INLINE
 #define MAYBE_VOLATILE
 #define IS_GENERIC 1
 

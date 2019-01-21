@@ -1,4 +1,5 @@
-inline uint64_t pubkey_to_address(const uchar *pubkey) {
+CUSTOM_INLINE
+uint64_t pubkey_to_address(const uchar *pubkey) {
 	uchar hash[32];
 	u32 inDataAlignedTo64Bytes[8] = { 0 };
 	sha256_ctx_t hasher;
