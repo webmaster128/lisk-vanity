@@ -26,6 +26,7 @@ impl Gpu {
         platform_idx: usize,
         device_idx: usize,
         threads: usize,
+        local_work_size: Option<usize>,
         max_address_value: u64,
         generate_key_type: GenerateKeyType,
     ) -> Result<Gpu, String> {
@@ -108,16 +109,23 @@ impl Gpu {
             GenerateKeyType::PrivateKey => 1,
         };
 
-        let kernel = Kernel::builder()
-            .program(&program)
-            .name("generate_pubkey")
-            .queue(queue.clone())
-            .global_work_size(threads)
-            .arg(&result)
-            .arg(&key_root)
-            .arg(max_address_value)
-            .arg(gen_key_type_code)
-            .build()?;
+        let kernel = {
+            let mut builder = Kernel::builder();
+            builder
+                .program(&program)
+                .name("generate_pubkey")
+                .queue(queue.clone())
+                .global_work_size(threads)
+                .arg(&result)
+                .arg(&key_root)
+                .arg(max_address_value)
+                .arg(gen_key_type_code);
+            if let Some(local_work_size) = local_work_size {
+                builder.local_work_size(local_work_size);
+            }
+            builder.build()?
+        };
+
         eprintln!("GPU kernel built.");
 
         Ok(Gpu {
