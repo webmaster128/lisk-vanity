@@ -88,6 +88,32 @@ To change your GPU platform, use `--gpu-platform [index]`, where `[index]`
 is the index of your GPU starting at 0.
 To change your GPU device, use `--gpu-device [index]`.
 
+## Common issues and troubleshooting
+
+### OpenCL compilation on the AMD toolchain rocm hangs forever
+
+This is a known compiler bug in rocm: https://github.com/RadeonOpenCompute/ROCm/issues/683.
+
+You could potentially use Windows and AMD's Windows toolchain, which is not affected.
+
+### Cannot find -lOpenCL
+
+The rust compilation error
+
+```
+  = note: /usr/bin/ld: cannot find -lOpenCL
+          /usr/bin/ld: cannot find -lOpenCL
+          collect2: error: ld returned 1 exit status
+```
+
+means that the file libOpenCL.so could not be found in the system's default library paths.
+This happens for example when installing CUDA.
+To specify an additional folder to search in, use e.g.
+
+```
+RUSTFLAGS='-L /usr/local/cuda/lib64/' cargo build --release
+```
+
 ## History and credits
 
 lisk-vanity is a fork of [nano-vanity](https://github.com/PlasmaPower/nano-vanity) by Lee Bousfield
