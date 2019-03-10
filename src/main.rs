@@ -49,6 +49,7 @@ impl Gpu {
         _platform_idx: usize,
         _device_idx: usize,
         _threads: usize,
+        _local_work_size: Option<usize>,
         _max_address_value: u64,
         _generate_key_type: GenerateKeyType,
     ) -> Result<Gpu, String> {
@@ -174,6 +175,12 @@ fn main() {
                 .help("The number of GPU threads to use"),
         )
         .arg(
+            clap::Arg::with_name("gpu_local_work_size")
+                .long("gpu-local-work-size")
+                .value_name("N")
+                .help("The GPU local work size. A custom value it may increase performance. By default the OpenCL driver is responsible for setting a proper value. Don't use this if you don't know what you are doing."),
+        )
+        .arg(
             clap::Arg::with_name("no_progress")
                 .long("no-progress")
                 .help("Disable progress output"),
@@ -278,6 +285,10 @@ fn main() {
             .unwrap()
             .parse()
             .expect("Failed to parse GPU threads option");
+        let gpu_local_work_size = args.value_of("gpu_local_work_size").map(|s| {
+            s.parse()
+                .expect("Failed to parse GPU local work size option")
+        });
         let mut key_base = [0u8; 32];
         let params = ThreadParams {
             limit,
@@ -292,6 +303,7 @@ fn main() {
             gpu_platform,
             gpu_device,
             gpu_threads,
+            gpu_local_work_size,
             max_address(max_length),
             gen_key_type,
         )
