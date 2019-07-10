@@ -1,6 +1,3 @@
-#![feature(int_to_from_bytes)]
-#![feature(try_from)]
-
 use std::f64;
 use std::process;
 use std::sync::atomic;
