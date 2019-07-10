@@ -4,7 +4,7 @@ Generates a short Lisk address. The shorter the address, the longer it'll take t
 
 ## Requirements
 
-* [Rustup](https://rustup.rs/) or a different way to run Rust nightly
+* [Rustup](https://rustup.rs/) or a different way to run Rust (stable)
 
 ## Installation from source
 
@@ -13,7 +13,7 @@ git clone https://github.com/webmaster128/lisk-vanity.git
 cd lisk-vanity
 ```
 
-To compile, we run the following commands Rust nightly environment (`rustup run nightly bash`):
+To compile, we run the following commands Rust environment (`source $HOME/.cargo/env`):
 
 ```
 cargo build --release
