@@ -190,14 +190,16 @@ mod tests {
         // is 550592072897524L (address length 15).
         let mut key_base = [0u8; 32];
         let mut expected_match = [0u8; 32];
-        key_base.copy_from_slice(
-            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2")
-                .unwrap(),
-        );
-        expected_match.copy_from_slice(
-            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2")
-                .unwrap(),
-        );
+        hex::decode_to_slice(
+            "456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2",
+            &mut key_base,
+        )
+        .unwrap();
+        hex::decode_to_slice(
+            "456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2",
+            &mut expected_match,
+        )
+        .unwrap();
 
         let found = gpu
             .compute(&key_base)
@@ -232,17 +234,19 @@ mod tests {
         // is 550592072897524L (address length 15). We start with a key a little bit lower to check if we find this one.
         let mut key_base = [0u8; 32];
         let mut expected_match = [0u8; 32];
-        key_base.copy_from_slice(
-            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbb00")
-                .unwrap(),
-        );
-        expected_match.copy_from_slice(
-            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2")
-                .unwrap(),
-        );
+        hex::decode_to_slice(
+            "456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbb00",
+            &mut key_base,
+        )
+        .unwrap();
+        hex::decode_to_slice(
+            "456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2",
+            &mut expected_match,
+        )
+        .unwrap();
 
         let found = gpu
-            .compute(&key_base as _)
+            .compute(&key_base)
             .expect("Failed to run GPU computation");
 
         if let Some(found_private_key) = found {

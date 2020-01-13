@@ -2131,24 +2131,24 @@ mod tests {
         // https://github.com/iov-one/iov-core/blob/v0.9.1/packages/iov-crypto/src/bip39.spec.ts#L13
         let mut entropy = [0u8; 16];
 
-        entropy.copy_from_slice(&hex::decode("00000000000000000000000000000000").unwrap());
+        hex::decode_to_slice("00000000000000000000000000000000", &mut entropy).unwrap();
         assert_eq!(entropy_to_mnemonic(&entropy).as_slice(), b"abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" as &[u8]);
 
-        entropy.copy_from_slice(&hex::decode("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap());
+        hex::decode_to_slice("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f", &mut entropy).unwrap();
         assert_eq!(
             entropy_to_mnemonic(&entropy).as_slice(),
             b"legal winner thank year wave sausage worth useful legal winner thank yellow"
                 as &[u8]
         );
 
-        entropy.copy_from_slice(&hex::decode("80808080808080808080808080808080").unwrap());
+        hex::decode_to_slice("80808080808080808080808080808080", &mut entropy).unwrap();
         assert_eq!(
             entropy_to_mnemonic(&entropy).as_slice(),
             b"letter advice cage absurd amount doctor acoustic avoid letter advice cage above"
                 as &[u8]
         );
 
-        entropy.copy_from_slice(&hex::decode("ffffffffffffffffffffffffffffffff").unwrap());
+        hex::decode_to_slice("ffffffffffffffffffffffffffffffff", &mut entropy).unwrap();
         assert_eq!(
             entropy_to_mnemonic(&entropy).as_slice(),
             b"zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong" as &[u8]
