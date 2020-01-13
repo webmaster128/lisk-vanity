@@ -144,11 +144,11 @@ fn main() {
                 .help("Generate a key pair instead of a passphrase"),
         )
         .arg(
-            clap::Arg::with_name("threads")
+            clap::Arg::with_name("cpu_threads")
                 .short("t")
-                .long("threads")
+                .long("cpu-threads")
                 .value_name("N")
-                .help("The number of threads to use [default: number of cores minus one]"),
+                .help("The number of CPU threads to use [default: number of cores minus one]"),
         )
         .arg(
             clap::Arg::with_name("gpu")
@@ -230,13 +230,13 @@ fn main() {
         gen_key_type = GenerateKeyType::LiskPassphrase;
     }
 
-    let threads = args
-        .value_of("threads")
+    let cpu_threads = args
+        .value_of("cpu_threads")
         .map(|s| s.parse().expect("Failed to parse thread count option"))
         .unwrap_or_else(|| num_cpus::get() - 1);
-    let mut thread_handles = Vec::with_capacity(threads);
+    let mut thread_handles = Vec::with_capacity(cpu_threads);
     eprintln!("Estimated attempts needed: {}", estimated_attempts);
-    for _ in 0..threads {
+    for _ in 0..cpu_threads {
         let mut rng = OsRng::new().expect("Failed to get RNG for seed");
         let mut key_or_seed = [0u8; 32];
         rng.fill_bytes(&mut key_or_seed);
