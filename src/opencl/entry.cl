@@ -24,14 +24,16 @@ __kernel void generate_pubkey(
 	}
 
 	uint64_t const thread_id = get_global_id(0);
-	key_material[16] ^= (thread_id >> (7*8)) & 0xFF;
-	key_material[17] ^= (thread_id >> (6*8)) & 0xFF;
-	key_material[18] ^= (thread_id >> (5*8)) & 0xFF;
-	key_material[19] ^= (thread_id >> (4*8)) & 0xFF;
-	key_material[20] ^= (thread_id >> (3*8)) & 0xFF;
-	key_material[21] ^= (thread_id >> (2*8)) & 0xFF;
-	key_material[22] ^= (thread_id >> (1*8)) & 0xFF;
-	key_material[23] ^= (thread_id >> (0*8)) & 0xFF;
+	// For passphrases in key_material, the first 16 bytes are ignored.
+	// We XOR the big endian encoded thread ID into the last 8 bytes.
+	key_material[31-7] ^= (thread_id >> (7*8)) & 0xFF;
+	key_material[31-6] ^= (thread_id >> (6*8)) & 0xFF;
+	key_material[31-5] ^= (thread_id >> (5*8)) & 0xFF;
+	key_material[31-4] ^= (thread_id >> (4*8)) & 0xFF;
+	key_material[31-3] ^= (thread_id >> (3*8)) & 0xFF;
+	key_material[31-2] ^= (thread_id >> (2*8)) & 0xFF;
+	key_material[31-1] ^= (thread_id >> (1*8)) & 0xFF;
+	key_material[31-0] ^= (thread_id >> (0*8)) & 0xFF;
 
 	uchar menomic_hash[32];
 	uchar *key;
