@@ -128,7 +128,7 @@ fn check_solution(params: &ThreadParams, key_material: [u8; 32]) -> bool {
 fn main() {
     let args = clap::App::new("lisk-vanity")
         .version(env!("CARGO_PKG_VERSION"))
-        .author("Lee Bousfield <ljbousfield@gmail.com>")
+        .author("Simon Warta <simon@warta.it>")
         .about("Generate short Lisk addresses")
         .arg(
             clap::Arg::with_name("length")
