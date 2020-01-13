@@ -31,7 +31,7 @@ inline void clear_first_twelve_bytes(u32 *buffer) {
 inline
 void bip39_entropy_to_mnemonic(const uchar *entropy, uchar *hash_out) {
     uchar checksum[32];
-	u32 inDataAlignedTo64Bytes[16] = { 0 };
+	u32 inDataAlignedTo64Bytes[16] = { 0 }; // must be 64 bytes zero-filled for sha256_update to work
 	sha256_ctx_t hasher;
 	sha256_init (&hasher);
 	to_16bytes_sha2_input(inDataAlignedTo64Bytes, entropy);
