@@ -66,7 +66,7 @@ __kernel void generate_pubkey(
 	bignum256modm a;
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {
-		u32 in[32] = { 0 };
+		u32 in[32] = { 0 }; // must be 128 bytes zero-filled for sha512_update to work
 		uchar hash[64];
 
 		sha512_ctx_t hasher;
@@ -75,9 +75,9 @@ __kernel void generate_pubkey(
 		to_32bytes_sha2_input(in, key);
 		// print_bytes(in_data, 32);
 		// print_words(in, 8);
-		sha512_update (&hasher, in, 32);
+		sha512_update(&hasher, in, 32);
 
-		sha512_final (&hasher);
+		sha512_final(&hasher);
 		from_sha512_result(hash, hasher.h);
 
 		// printf("(%i) ", hasher.len);
