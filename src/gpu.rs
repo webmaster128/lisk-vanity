@@ -137,6 +137,7 @@ impl Gpu {
 
     pub fn compute(&mut self, key_root: &[u8]) -> Result<Option<[u8; 32]>, String> {
         debug_assert!({
+            // Ensure result is filled with zeros
             let mut result = [0u8; 32];
             self.result.read(&mut result as &mut [u8]).enq()?;
             result.iter().all(|&b| b == 0)
@@ -152,7 +153,8 @@ impl Gpu {
 
         let matched = !out.iter().all(|&b| b == 0);
         if matched {
-            self.result.write(&[0u8; 32] as &[u8]).enq()?;
+            let zeros = [0u8; 32];
+            self.result.write(&zeros as &[u8]).enq()?;
             return Ok(Option::Some(out));
         } else {
             return Ok(Option::None);
