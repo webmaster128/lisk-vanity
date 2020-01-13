@@ -33,7 +33,7 @@
 __kernel void generate_pubkey(
 	__global uchar *result,
 	__constant uchar *key_material_base,
-	ulong max_address_value,
+	uint64_t max_address_value,
 	uchar generate_key_type
 ) {
 	uchar key_material[32];
