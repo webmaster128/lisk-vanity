@@ -12,15 +12,33 @@
 // 	printf("\n");
 // }
 
+/**
+ * result:
+ *     The 32 byte key material that is written once a matching address was found.
+ *     This is all zero by default and any non-zero result indicates a match. All local
+ *     threads write to the same global memory, so we can get corrupted results if
+ *     multiple threads find a match. This usually does not happen for hard enough
+ *     tasks but we need to double check the result in the caller code for this reason.
+ * key_material_base:
+ *     The root input key material. This is 32 bytes from a cryptographically secure
+ *     random number generator. The thread ID is XORed into the last 8 bytes of this.
+ * max_address_value:
+ *     The largest address value that is considered a match, e.g. 999999999999 when
+ *     looking for 12 digit addresses.
+ * generate_key_type:
+ *     0 means Lisk passphrase encoded as 16 bytes of BIP39 entropy
+ *     1 means Ed25519 private key (seed) encoded as 32 bytes
+ *     2 means The curve point of the blinding factor (currently unsupported; see https://github.com/PlasmaPower/nano-vanity for proper usage)
+ */
 __kernel void generate_pubkey(
 	__global uchar *result,
-	__constant uchar *key_root,
+	__constant uchar *key_material_base,
 	ulong max_address_value,
 	uchar generate_key_type
 ) {
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
-		key_material[i] = key_root[i];
+		key_material[i] = key_material_base[i];
 	}
 
 	uint64_t const thread_id = get_global_id(0);
