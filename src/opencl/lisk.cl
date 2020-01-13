@@ -1,11 +1,11 @@
 inline uint64_t pubkey_to_address(const uchar *pubkey) {
 	uchar hash[32];
-	u32 inDataAlignedTo64Bytes[8] = { 0 };
+	u32 inDataAlignedTo64Bytes[16] = { 0 }; // must be 64 bytes zero-filled for sha256_update to work
 	sha256_ctx_t hasher;
-	sha256_init (&hasher);
+	sha256_init(&hasher);
 	to_32bytes_sha2_input(inDataAlignedTo64Bytes, pubkey);
-	sha256_update (&hasher, inDataAlignedTo64Bytes, 32);
-	sha256_final (&hasher);
+	sha256_update(&hasher, inDataAlignedTo64Bytes, 32);
+	sha256_final(&hasher);
 	from_sha256_result(hash, hasher.h);
 
 	// First eight bytes little endian

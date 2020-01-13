@@ -12,26 +12,46 @@
 // 	printf("\n");
 // }
 
+/**
+ * result:
+ *     The 32 byte key material that is written once a matching address was found.
+ *     This is all zero by default and any non-zero result indicates a match. All local
+ *     threads write to the same global memory, so we can get corrupted results if
+ *     multiple threads find a match. This usually does not happen for hard enough
+ *     tasks but we need to double check the result in the caller code for this reason.
+ * key_material_base:
+ *     The root input key material. This is 32 bytes from a cryptographically secure
+ *     random number generator. The thread ID is XORed into the last 8 bytes of this.
+ * max_address_value:
+ *     The largest address value that is considered a match, e.g. 999999999999 when
+ *     looking for 12 digit addresses.
+ * generate_key_type:
+ *     0 means Lisk passphrase encoded as 16 bytes of BIP39 entropy
+ *     1 means Ed25519 private key (seed) encoded as 32 bytes
+ *     2 means The curve point of the blinding factor (currently unsupported; see https://github.com/PlasmaPower/nano-vanity for proper usage)
+ */
 __kernel void generate_pubkey(
 	__global uchar *result,
-	__constant uchar *key_root,
-	ulong max_address_value,
+	__constant uchar *key_material_base,
+	uint64_t max_address_value,
 	uchar generate_key_type
 ) {
 	uchar key_material[32];
 	for (size_t i = 0; i < 32; i++) {
-		key_material[i] = key_root[i];
+		key_material[i] = key_material_base[i];
 	}
 
 	uint64_t const thread_id = get_global_id(0);
-	key_material[16] ^= (thread_id >> (7*8)) & 0xFF;
-	key_material[17] ^= (thread_id >> (6*8)) & 0xFF;
-	key_material[18] ^= (thread_id >> (5*8)) & 0xFF;
-	key_material[19] ^= (thread_id >> (4*8)) & 0xFF;
-	key_material[20] ^= (thread_id >> (3*8)) & 0xFF;
-	key_material[21] ^= (thread_id >> (2*8)) & 0xFF;
-	key_material[22] ^= (thread_id >> (1*8)) & 0xFF;
-	key_material[23] ^= (thread_id >> (0*8)) & 0xFF;
+	// For passphrases in key_material, the first 16 bytes are ignored.
+	// We XOR the big endian encoded thread ID into the last 8 bytes.
+	key_material[31-7] ^= (thread_id >> (7*8)) & 0xFF;
+	key_material[31-6] ^= (thread_id >> (6*8)) & 0xFF;
+	key_material[31-5] ^= (thread_id >> (5*8)) & 0xFF;
+	key_material[31-4] ^= (thread_id >> (4*8)) & 0xFF;
+	key_material[31-3] ^= (thread_id >> (3*8)) & 0xFF;
+	key_material[31-2] ^= (thread_id >> (2*8)) & 0xFF;
+	key_material[31-1] ^= (thread_id >> (1*8)) & 0xFF;
+	key_material[31-0] ^= (thread_id >> (0*8)) & 0xFF;
 
 	uchar menomic_hash[32];
 	uchar *key;
@@ -46,7 +66,7 @@ __kernel void generate_pubkey(
 	bignum256modm a;
 	ge25519 ALIGN(16) A;
 	if (generate_key_type != 2) {
-		u32 in[32] = { 0 };
+		u32 in[32] = { 0 }; // must be 128 bytes zero-filled for sha512_update to work
 		uchar hash[64];
 
 		sha512_ctx_t hasher;
@@ -55,9 +75,9 @@ __kernel void generate_pubkey(
 		to_32bytes_sha2_input(in, key);
 		// print_bytes(in_data, 32);
 		// print_words(in, 8);
-		sha512_update (&hasher, in, 32);
+		sha512_update(&hasher, in, 32);
 
-		sha512_final (&hasher);
+		sha512_final(&hasher);
 		from_sha512_result(hash, hasher.h);
 
 		// printf("(%i) ", hasher.len);
