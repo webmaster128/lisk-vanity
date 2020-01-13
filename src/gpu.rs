@@ -169,7 +169,49 @@ mod tests {
     use pubkey_matcher::max_address;
 
     #[test]
-    fn test_finds_private_key() {
+    fn test_finds_private_key_directly() {
+        let gpu_platform = 0;
+        let gpu_device = 0;
+        let gpu_threads = 1; // Only a single attempt
+        let gpu_local_work_size = None; // let GPU device decide
+        let max_length = 15;
+        let mut gpu = Gpu::new(
+            gpu_platform,
+            gpu_device,
+            gpu_threads,
+            gpu_local_work_size,
+            max_address(max_length),
+            GenerateKeyType::PrivateKey,
+        )
+        .unwrap();
+
+        // 456C62AF90D3DFD765B7D4B56038CBE19AFA5AEA9CF3AA3B1E9E476C8CAFBBC2D4C27C4E12914952BDADF3C92FC2AC16230AEEA99E52D9E21DC3269EEF845488
+        // is the privkey in libsodium format. The first half is the private seed and the second half is the pubkey. The corresponding address
+        // is 550592072897524L (address length 15).
+        let mut key_base = [0u8; 32];
+        let mut expected_match = [0u8; 32];
+        key_base.copy_from_slice(
+            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2")
+                .unwrap(),
+        );
+        expected_match.copy_from_slice(
+            &hex::decode("456c62af90d3dfd765b7d4b56038cbe19afa5aea9cf3aa3b1e9e476c8cafbbc2")
+                .unwrap(),
+        );
+
+        let found = gpu
+            .compute(&key_base)
+            .expect("Failed to run GPU computation");
+
+        if let Some(found_private_key) = found {
+            assert_eq!(found_private_key, expected_match);
+        } else {
+            panic!("No matching key found");
+        }
+    }
+
+    #[test]
+    fn test_finds_private_key_in_last_byte() {
         let gpu_platform = 0;
         let gpu_device = 0;
         let gpu_threads = 256; // low number to allow quick tests on CPU platforms and ensure we don't find a different solution than expected
