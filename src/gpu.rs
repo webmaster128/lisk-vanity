@@ -246,7 +246,7 @@ mod tests {
         .unwrap();
 
         let found = gpu
-            .compute(&key_base as _)
+            .compute(&key_base)
             .expect("Failed to run GPU computation");
 
         if let Some(found_private_key) = found {

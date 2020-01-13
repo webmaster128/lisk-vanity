@@ -310,7 +310,7 @@ fn main() {
             loop {
                 rng.fill_bytes(&mut key_base);
                 let found = gpu
-                    .compute(&key_base as _)
+                    .compute(&key_base)
                     .expect("Failed to run GPU computation");
                 if output_progress {
                     params
