@@ -6,8 +6,8 @@
 ╚██████╔╝██║░╚███║██║░╚═╝░██║██║░░██║██║██║░╚███║░░░██║░░░██║░░██║██║██║░╚███║███████╗██████╔╝
 ░╚═════╝░╚═╝░░╚══╝╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝░░╚═╝╚═╝╚═╝░░╚══╝╚══════╝╚═════╝░
 
-This repository is unmaintained since Lisk will migrate to a different length address format (LIP0018)
-and the author is not planning to update this repository to the new address system.
+This repository is unmaintained since Lisk will migrate to a different length address format
+(LIP0018) and the author is not planning to update this repository to the new address system.
 ```
 
 # lisk-vanity
